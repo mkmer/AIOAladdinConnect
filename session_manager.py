@@ -16,11 +16,13 @@ class SessionManager:
 
     LOGIN_ENDPOINT = "/oauth/token"
     X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW"
+    
 
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, email, password):
-        self._session = aiohttp.ClientSession()
+        timeout = aiohttp.ClientTimeout(total=30)
+        self._session = aiohttp.ClientSession(timeout = timeout)
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
                                       'AppVersion': self.HEADER_APP_VERSION,
                                       'BundleName': self.HEADER_BUNDLE_NAME,
@@ -46,11 +48,15 @@ class SessionManager:
                     "app_version": "5.25",
                     "build_number": "2038",
                     "os_version": "12.0.0"}
+
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
+
         try:
             response = await self._session.post(url ,data=payload,headers=self._headers)
+
             if response.content_type == "application/json":
                 response_json = await response.json()
+
             if response_json and "access_token" in response_json:
                 self._logged_in = True
                 self._auth_token = response_json["access_token"]
