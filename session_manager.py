@@ -4,6 +4,7 @@ import logging
 from tkinter import N
 import aiohttp
 
+
 class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
     HEADER_USER_AGENT = "okhttp/3.12.1"
@@ -33,6 +34,11 @@ class SessionManager:
         self._user_email = email
         self._password = password
         self._logged_in = False
+    
+    @property 
+    def auth_token(self):
+        return self._auth_token
+
 
     async def login(self):
         self._auth_token = None
@@ -48,6 +54,7 @@ class SessionManager:
                     "app_version": "5.25",
                     "build_number": "2038",
                     "os_version": "12.0.0"}
+
 
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
 

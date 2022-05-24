@@ -1,6 +1,7 @@
 import logging
 
 from AIOAladdinConnect.session_manager import SessionManager
+from AIOAladdinConnect.eventsocket import EventSocket
 #from session_manager import SessionManager
 
 class AladdinConnectClient:
@@ -50,11 +51,16 @@ class AladdinConnectClient:
 
     def __init__(self, email, password):
         self._session = SessionManager(email, password)
+        self._eventsocket = None
         self._user_email = email
         self._device_portal = {}
     
     async def login(self):
-        return await self._session.login()
+        status = await self._session.login()
+        if status:
+            self._eventsocket = EventSocket(self._session.auth_token,None)
+            self._eventsocket.start()
+        return status
     
     async def close(self):
         return await self._session.close()
