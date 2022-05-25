@@ -90,7 +90,9 @@ class AladdinConnectClient:
                         'door_number': door["door_index"],
                         'name': door["name"],
                         'status': self.DOOR_STATUS[door["status"]],
-                        'link_status': self.DOOR_LINK_STATUS[door["link_status"]]
+                        'link_status': self.DOOR_LINK_STATUS[door["link_status"]],
+                        'battery_level': door["battery_level"],
+                        'rssi': device['rssi']
                     })
                 devices.append({
                     'device_id': device["id"],
@@ -133,18 +135,3 @@ class AladdinConnectClient:
         except ValueError as ex:
             self._LOGGER.error("Aladdin Connect - Unable to get door status %s", ex)
         return self.DOOR_STATUS_UNKNOWN
-
-
-    async def listen_door_status(self, device_id, door_number):
-        """Set door state"""
-       # payload = {"command_key": self.REQUEST_DOOR_STATUS_COMMAND[requested_door_status]}
-
-        try:
-            x = await self._session.call_status(f"/devices/{device_id}/door/{door_number}/status")
-        except ValueError as ex:
-            # Ignore "Door is already open/closed" errors to maintain backwards compatibility
-        
-            self._LOGGER.error("Aladdin Connect - Unable to get door status %s", ex)
-            return False
-
-        return x

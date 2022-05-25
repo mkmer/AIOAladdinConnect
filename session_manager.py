@@ -9,8 +9,8 @@ class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
     HEADER_USER_AGENT = "okhttp/3.12.1"
     HEADER_BUNDLE_NAME = "com.geniecompany.AladdinConnect"
-    HEADER_BUILD_VERSION = "131"
-    HEADER_APP_VERSION = "5.25"
+    HEADER_BUILD_VERSION = "2042"
+    HEADER_APP_VERSION = "5.30"
 
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
     RPC_URL = API_BASE_URL
@@ -51,8 +51,8 @@ class SessionManager:
                     "password": password_base64,
                     "platform": "platform",
                     "model": "Google Pixel 6",
-                    "app_version": "5.25",
-                    "build_number": "2038",
+                    "app_version": "5.30",
+                    "build_number": "2042",
                     "os_version": "12.0.0"}
 
 
