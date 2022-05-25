@@ -1,5 +1,6 @@
+from gc import callbacks
 import logging
-
+import json
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect.eventsocket import EventSocket
 #from session_manager import SessionManager
@@ -54,12 +55,21 @@ class AladdinConnectClient:
         self._eventsocket = None
         self._user_email = email
         self._device_portal = {}
+        self._doors = {'device_id':0}
     
     async def login(self):
+        self._LOGGER.debug("Logging in")
         status = await self._session.login()
         if status:
-            self._eventsocket = EventSocket(self._session.auth_token,None)
-            self._eventsocket.start()
+            self._LOGGER.debug("Logged in")
+
+            await self.get_doors()
+            self._LOGGER.debug("Got initial door status")
+            
+            self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
+            await self._eventsocket.start()
+            self._LOGGER.debug("Started Socket")
+            
         return status
     
     async def close(self):
@@ -73,13 +83,14 @@ class AladdinConnectClient:
         if devices:
             for device in devices:
                 doors += device['doors']
-
+        self._doors = doors
         return doors
 
     async def _get_devices(self):
         """Get list of devices, i.e., Aladdin Door Controllers"""
 
         try:
+
             response = await self._session.get(self.CONFIGURATION_ENDPOINT)
             devices = []
             for device in response["devices"]:
@@ -127,11 +138,14 @@ class AladdinConnectClient:
         return True
 
     async def get_door_status(self, device_id, door_number):
-        try:
-            doors = await self.get_doors()
-            for door in doors:
-                if door["device_id"] == device_id and door["door_number"] == door_number:
-                    return door["status"]
-        except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to get door status %s", ex)
-        return self.DOOR_STATUS_UNKNOWN
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["status"]
+    
+
+    async def _call_back(self,msg):
+        self._LOGGER.info(f"Got the callback {json.loads(msg)}")
+        json_msg = json.loads(msg)
+        for door in self._doors:
+            if json_msg['door'] == door['door_number']:
+                door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})

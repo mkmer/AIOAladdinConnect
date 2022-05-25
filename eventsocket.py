@@ -21,27 +21,23 @@ class EventSocket:
         self._running = False
         self._websocket: aiohttp.ClientWebSocketResponse = None
         self._run_future = None
+        self._timeout = aiohttp.ClientTimeout(total=None)
        
-    async def _recv_msg(self, websocket: aiohttp.ClientWebSocketResponse):
-        msg = await websocket.receive()
-        LOGGER.debug(f"< {msg}")
-        return msg
-
 
     async def _run(self):
         if not self._running:
             return
-
+        LOGGER.debug("Started the web socket")
         headers = {
             "Authorization": f'Bearer {self._access_token}'}
-        timeout = aiohttp.ClientTimeout(total=None)
-        async with aiohttp.ClientSession(timeout=timeout, headers=headers) as session:
+        async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
             async with session.ws_connect(
-                WSURI, timeout=None, autoclose=True, autoping=True, heartbeat=20
+                WSURI,  heartbeat=20
             ) as ws:
                 self._websocket = ws
-
+                LOGGER.debug("Opened the web socket")
                 while not ws.closed:
+                    LOGGER.debug("waiting for message")
                     msg = await ws.receive()
                     LOGGER.debug(f"event message received< {json.loads(msg.data)}")
                     if not msg:
@@ -62,16 +58,16 @@ class EventSocket:
                         LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
                         continue
                     
-                    #self._msg_listener(json.loads(msg.data))
+                    await self._msg_listener(msg.data)
 
-            self._websocket = None
+        self._websocket = None
 
         if self._running:
             # Just keep reconnecting - The AladdinConect app just reconnects forever.
             LOGGER.info("Reconnecting...")
             self._run_future = asyncio.get_event_loop().create_task(self._run())
 
-    def start(self):
+    async def start(self):
         self._running = True
         self._run_future = asyncio.get_event_loop().create_task(self._run())
 

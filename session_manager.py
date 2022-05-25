@@ -22,8 +22,8 @@ class SessionManager:
     _LOGGER = logging.getLogger(__name__)
 
     def __init__(self, email, password):
-        timeout = aiohttp.ClientTimeout(total=30)
-        self._session = aiohttp.ClientSession(timeout = timeout)
+        self._timeout = aiohttp.ClientTimeout(total=30)
+        self._session = aiohttp.ClientSession(timeout = self._timeout)
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
                                       'AppVersion': self.HEADER_APP_VERSION,
                                       'BundleName': self.HEADER_BUNDLE_NAME,
@@ -35,7 +35,7 @@ class SessionManager:
         self._password = password
         self._logged_in = False
     
-    @property 
+
     def auth_token(self):
         return self._auth_token
 
@@ -104,7 +104,7 @@ class SessionManager:
             raise ValueError(msg)
         
         if response.content_type == "application/json":
-            return response.json()
+            return await response.json()
         
         return None
 
@@ -125,3 +125,4 @@ class SessionManager:
             return await response.json()
         
         return None
+
