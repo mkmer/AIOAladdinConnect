@@ -1,9 +1,10 @@
+from calendar import Calendar
 from gc import callbacks
 import logging
 import json
+from typing import Callable
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect.eventsocket import EventSocket
-#from session_manager import SessionManager
 
 class AladdinConnectClient:
     CONFIGURATION_ENDPOINT = "/configuration"
@@ -50,12 +51,13 @@ class AladdinConnectClient:
 
     _LOGGER = logging.getLogger(__name__)
 
-    def __init__(self, email, password):
+    def __init__(self, email:str, password:str,attr_changed:Callable):
         self._session = SessionManager(email, password)
         self._eventsocket = None
         self._user_email = email
         self._device_portal = {}
         self._doors = {'device_id':0}
+        self._attr_changed = attr_changed
     
     async def login(self):
         self._LOGGER.debug("Logging in")
@@ -150,3 +152,5 @@ class AladdinConnectClient:
             if json_msg['door'] == door['door_number']:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                 self._LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                if self._attr_changed:
+                    self._attr_changed()
