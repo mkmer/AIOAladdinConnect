@@ -149,3 +149,4 @@ class AladdinConnectClient:
         for door in self._doors:
             if json_msg['door'] == door['door_number']:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
+                self._LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
