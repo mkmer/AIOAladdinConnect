@@ -1,5 +1,3 @@
-from calendar import Calendar
-from gc import callbacks
 import logging
 import json
 from typing import Callable
