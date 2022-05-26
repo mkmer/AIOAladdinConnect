@@ -1,5 +1,6 @@
 import base64
 import logging
+from typing import Any
 import aiohttp
 
 
@@ -37,6 +38,10 @@ class SessionManager:
     def auth_token(self):
         return self._auth_token
 
+    def set_auth_token(self,auth_token):
+        self._auth_token = auth_token
+        self._headers.update({'Authorization': f'Bearer {self._auth_token}'})
+
 
     async def login(self):
         self._auth_token = None
@@ -72,7 +77,8 @@ class SessionManager:
         return False
 
     async def close(self):
-        self._session.close()
+        if self._session:
+            self._session.close()
 
     async def get(self,endpoint:str):
         url = self.API_BASE_URL + endpoint

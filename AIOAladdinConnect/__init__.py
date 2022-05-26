@@ -77,7 +77,9 @@ class AladdinConnectClient:
         return status
     
     async def close(self):
-        return await self._session.close()
+        await self._session.close()
+        await self._eventsocket.stop()
+        return True
 
     async def get_doors(self):
         """Get all doors status and store values 
@@ -160,6 +162,11 @@ class AladdinConnectClient:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["battery_level"]
 
+    async def get_rssi_status(self,device_id,door_number):
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["rssi"]
+
     async def _call_back(self,msg):
         """Call back from AIO HTTP web socket with door status information"""
         self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
@@ -170,3 +177,9 @@ class AladdinConnectClient:
                 self._LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                 if self._attr_changed:
                     self._attr_changed()
+
+    def auth_token(self):
+        return self._session.auth_token()
+
+    def set_auth_token(self,auth_token):
+        self._session.set_auth_token(auth_token)
