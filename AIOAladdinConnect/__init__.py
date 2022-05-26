@@ -59,6 +59,10 @@ class AladdinConnectClient:
     
     async def login(self):
         self._LOGGER.debug("Logging in")
+        # if there is an error, trying to log back needs to stop the eventsocket
+        if self._eventsocket:
+            await self._eventsocket.stop()
+
         status = await self._session.login()
         if status:
             self._LOGGER.debug("Logged in")
@@ -76,6 +80,8 @@ class AladdinConnectClient:
         return await self._session.close()
 
     async def get_doors(self):
+        """Get all doors status and store values 
+            This function should be called intermittently to update all door information"""
         devices = await self._get_devices()
 
         doors = []
@@ -115,9 +121,11 @@ class AladdinConnectClient:
             return None
 
     async def close_door(self, device_id, door_number):
+        """Command to close the door"""
         await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
 
     async def open_door(self, device_id, door_number):
+        """Command to open the door"""
         await self._set_door_status(device_id, door_number, self.DOOR_STATUS_OPEN)
 
     async def _set_door_status(self, device_id, door_number, requested_door_status):
@@ -141,9 +149,19 @@ class AladdinConnectClient:
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
-    
+
+    async def get_door_link_status(self,device_id,door_number):
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["link_status"]
+
+    async def get_battery_status(self,device_id,door_number):
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["battery_level"]
 
     async def _call_back(self,msg):
+        """Call back from AIO HTTP web socket with door status information"""
         self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         for door in self._doors:

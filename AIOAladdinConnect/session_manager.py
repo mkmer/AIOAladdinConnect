@@ -55,7 +55,6 @@ class SessionManager:
 
 
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
-
         try:
             response = await self._session.post(url ,data=payload,headers=self._headers)
 

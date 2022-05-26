@@ -38,10 +38,10 @@ class EventSocket:
                 LOGGER.debug("Opened the web socket")
                 while not ws.closed:
                     LOGGER.debug("waiting for message")
-                    msg = await ws.receive()
-                    LOGGER.debug(f"event message received< {json.loads(msg.data)}")
+                    msg = await ws.receive() 
                     if not msg:
                         continue
+                    LOGGER.debug(f"event message received< {json.loads(msg.data)}")
                     if msg.type == aiohttp.WSMsgType.ERROR:
                         LOGGER.error("Socket message error")
                         break
@@ -77,5 +77,4 @@ class EventSocket:
             return
         await self._websocket.close()
         self._websocket = None
-
         await self._run_future
