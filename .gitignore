@@ -3,3 +3,6 @@ __pycache__/*
 AIOAladdinConnect/__pycache__/*
 
 How to publish.txt
+AIOAladdinConnect.egg-info/*
+dist/AIOAladdinConnect-0.1.1.tar.gz
+AIOAladdinConnect/__pycache__/*
