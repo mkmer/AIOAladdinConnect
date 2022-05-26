@@ -8,7 +8,7 @@ setup(
     version='0.1.1',
     author='Mike Kasper',
     author_email='m_kasper@sbcglobal.net',
-    url='http://github.com/mkmer/AIOAladdinConnect/',
+    url='http://github.com/mkmer/AIOAladdinConnect',
     download_url='https://github.com/mkmer/AIOAladdinConnect/archive/refs/tags/0.1.1.tar.gz',
     packages=['AIOAladdinConnect'],
     scripts=[],
@@ -17,7 +17,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     classifiers=[
-        'Development Status :: 1 - Beta',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
