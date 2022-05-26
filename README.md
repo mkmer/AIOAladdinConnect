@@ -9,7 +9,9 @@ from AIOAladdinConnect import AladdinConnectClient
 
 # Create session using aladdin connect credentials
 client = AladdinConnectClient(email, password, callback)
-await client.login()
+await client.login("username","password",callback)
+or
+await client.login("username","password",None)
 
 # Get list of available doors and their status
 doors = await client.get_doors()
