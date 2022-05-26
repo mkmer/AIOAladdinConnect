@@ -144,11 +144,11 @@ class AladdinConnectClient:
     
 
     async def _call_back(self,msg):
-        self._LOGGER.info(f"Got the callback {json.loads(msg)}")
+        self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         for door in self._doors:
             if json_msg['door'] == door['door_number']:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
-                self._LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                self._LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                 if self._attr_changed:
                     self._attr_changed()
