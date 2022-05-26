@@ -5,10 +5,11 @@ with open("README.md", "r") as fh:
 
 setup(
     name='AIOAladdinConnect',
-    version='0.1',
+    version='0.1.1',
     author='Mike Kasper',
     author_email='m_kasper@sbcglobal.net',
     url='http://github.com/mkmer/AIOAladdinConnect',
+    download_url='https://github.com/mkmer/AIOAladdinConnect/archive/refs/tags/0.1.1.tar.gz',
     packages=['AIOAladdinConnect'],
     scripts=[],
     description='Python Async API for controlling Genie garage doors connected to Aladdin Connect devices',
