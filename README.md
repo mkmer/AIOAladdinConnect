@@ -1,11 +1,11 @@
-# aladdin-connect
+# AIOAladdinConnect
 Python module that allows interacting with Genie Aladdin Connect devices via AIOHttp
 
 Note that shared doors are not currently supported, only doors that are owned by your account can be controlled
 
 ## Usage
 ```
-from aladdin_connect import AladdinConnectClient
+from AIOAladdinConnect import AladdinConnectClient
 
 # Create session using aladdin connect credentials
 client = AladdinConnectClient(email, password)
