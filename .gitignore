@@ -1,3 +1,5 @@
 test.py
-AIOAladdinConnect/__pycache__/
+__pycache__/*
+AIOAladdinConnect/__pycache__/*
 
+How to publish.txt
