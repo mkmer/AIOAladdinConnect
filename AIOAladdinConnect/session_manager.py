@@ -78,7 +78,7 @@ class SessionManager:
 
     async def close(self):
         if self._session:
-            self._session.close()
+            await self._session.close()
 
     async def get(self,endpoint:str):
         url = self.API_BASE_URL + endpoint

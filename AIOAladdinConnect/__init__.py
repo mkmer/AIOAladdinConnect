@@ -52,11 +52,13 @@ class AladdinConnectClient:
     def __init__(self, email:str, password:str,attr_changed:Callable):
         self._session = SessionManager(email, password)
         self._eventsocket = None
-        self._user_email = email
-        self._device_portal = {}
         self._doors = {'device_id':0}
         self._attr_changed = attr_changed
     
+    def register_callback(self,update_callback:Callable):
+        self._attr_changed = update_callback
+        self._LOGGER.debug("Registered callback")
+ 
     async def login(self):
         self._LOGGER.debug("Logging in")
         # if there is an error, trying to log back needs to stop the eventsocket
@@ -176,7 +178,7 @@ class AladdinConnectClient:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                 self._LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                 if self._attr_changed:
-                    self._attr_changed()
+                    await self._attr_changed()
 
     def auth_token(self):
         return self._session.auth_token()
