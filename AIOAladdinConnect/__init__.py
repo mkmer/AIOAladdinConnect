@@ -120,17 +120,17 @@ class AladdinConnectClient:
                     'doors': doors
                 })
             return devices
-        except ValueError as ex:
+        except (ValueError,KeyError) as ex:
             self._LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
             return None
 
     async def close_door(self, device_id, door_number):
         """Command to close the door"""
-        await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
+        return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
 
     async def open_door(self, device_id, door_number):
         """Command to open the door"""
-        await self._set_door_status(device_id, door_number, self.DOOR_STATUS_OPEN)
+        return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_OPEN)
 
     async def _set_door_status(self, device_id, door_number, requested_door_status):
         """Set door state"""
