@@ -89,9 +89,7 @@ class SessionManager:
                 return await response.json()
 
         except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to get doors %s", ex)
-            self.login() # we need to renew
-
+            self._LOGGER.error("Aladdin Connect - Unable to get doors %s : %s", ex, response)
         return None        
 
     async def call_rpc(self,api, payload=None):
