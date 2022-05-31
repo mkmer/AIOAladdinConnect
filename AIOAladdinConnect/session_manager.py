@@ -90,6 +90,7 @@ class SessionManager:
 
         except ValueError as ex:
             self._LOGGER.error("Aladdin Connect - Unable to get doors %s", ex)
+            self.login() # we need to renew
 
         return None        
 
