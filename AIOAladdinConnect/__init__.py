@@ -192,6 +192,8 @@ class AladdinConnectClient:
 
     async def _call_back(self,msg):
         """Call back from AIO HTTP web socket with door status information"""
+        # Opening and Closing only are sent if the WEB API called the open/close event
+        # pressing the local button only results in a state change of open or close.
         self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         for door in self._doors:
