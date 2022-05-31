@@ -119,6 +119,10 @@ class SessionManager:
         except ValueError as ex:
             self._LOGGER.error("Aladdin Connect - Unable to listen to doors %s", ex)
 
+        if response.status is (401):
+            msg = f"Aladdin API call ({url}) failed: {response.status}, {response.text}"
+            raise aiohttp.ClientConnectionError(msg)
+            
         if response.status not in (200, 204):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {response.text}"
             raise ValueError(msg)

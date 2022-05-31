@@ -80,7 +80,8 @@ class AladdinConnectClient:
     
     async def close(self):
         await self._session.close()
-        await self._eventsocket.stop()
+        if self._eventsocket:
+            await self._eventsocket.stop()
         return True
 
     async def get_doors(self):
