@@ -173,6 +173,7 @@ class AladdinConnectClient:
         """Call back from AIO HTTP web socket with door status information"""
         self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
+        self._LOGGER.debug(f"Messge Received: {json_msg}")
         for door in self._doors:
             if json_msg['door'] == door['door_number']:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
