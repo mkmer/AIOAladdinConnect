@@ -8,3 +8,4 @@ dist/AIOAladdinConnect-0.1.1.tar.gz
 AIOAladdinConnect/__pycache__/*
 
 
+dist/*
