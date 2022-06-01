@@ -23,7 +23,7 @@ await client.open_door(my_door['device_id'], my_door['door_number'])
 
 # Get door status from internal structure.  Must call client.get_doors() to update structure
 # Door status also updates on state change from the web socket without calling client.get_doors
-await client.async_get_door_status(my_door['device_id'], my_door['door_number'])
+await client.async_get_door_status(my_door['device_id'], my_dooregister_callbackr['door_number'])
 client.get_door_status(my_door['device_id'], my_door['door_number'])
 
 # Get Doorlink statys from internal structure. Must call client.get_doors() to update structure
@@ -33,6 +33,18 @@ client.get_door_link_status(my_door['device_id'], my_door['door_number'])
 # Get Door Batery status from internal structure. Must call client.get_doors() to update structure
 await client.async_get_battery_status(my_door['device_id'], my_door['door_number'])
 client.get_battery_status(my_door['device_id'], my_door['door_number'])
+
+#assign callback for event based status updates:
+client.register_callback(your_callback_function)
+
+#Close the sockets at the end of a session:
+client.close()
+
+#Get the authtoken after login
+token = client.auth_token()
+
+#Set the authtoken if known (can skip login)
+client.set_auth_token(token)
 
 ```
 
