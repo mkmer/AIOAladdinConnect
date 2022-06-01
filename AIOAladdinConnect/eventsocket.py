@@ -41,7 +41,7 @@ class EventSocket:
                     msg = await ws.receive() 
                     if not msg:
                         continue
-                    LOGGER.debug(f"event message received< {json.loads(msg.data)}")
+                    LOGGER.debug(f"event message received< {json.loads(msg)}")
                     if msg.type == aiohttp.WSMsgType.ERROR:
                         LOGGER.error("Socket message error")
                         break
