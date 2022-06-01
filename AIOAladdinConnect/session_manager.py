@@ -3,7 +3,7 @@ import logging
 from typing import Any
 import aiohttp
 
-
+_LOGGER = logging.getLogger(__name__)
 class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
     HEADER_USER_AGENT = "okhttp/3.12.1"
@@ -18,7 +18,7 @@ class SessionManager:
     X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW"
     
 
-    _LOGGER = logging.getLogger(__name__)
+    
 
     def __init__(self, email, password):
         self._timeout = aiohttp.ClientTimeout(total=30)
@@ -72,7 +72,7 @@ class SessionManager:
                 self._headers.update({'Authorization': f'Bearer {self._auth_token}'})
                 return True
         except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to login %s", ex)
+            _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
 
         return False
 
@@ -85,12 +85,18 @@ class SessionManager:
         self._headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
         try:
             response = await self._session.get(url ,headers=self._headers)
+            if response:
+                _LOGGER.debug(f"Get message: {response}")
+
             if response.content_type == "application/json":
                 return await response.json()
 
         except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to get doors %s : %s", ex, response)
-        return None        
+            _LOGGER.error("Aladdin Connect - Unable to get doors %s : %s", ex, response)
+        
+        if response.status == 401:
+            raise aiohttp.ClientConnectionError("Key has expired")        
+        return None
 
     async def call_rpc(self,api, payload=None):
         self._headers.update({'Content-Type': 'application/json'})
@@ -99,7 +105,7 @@ class SessionManager:
             response = await self._session.post(url,json=payload,headers=self._headers)
         
         except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to operate doors %s", ex)
+            _LOGGER.error("Aladdin Connect - Unable to operate doors %s", ex)
         
         if response.status not in (200, 204):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.read()}"
@@ -117,7 +123,7 @@ class SessionManager:
             response = await self._session.get(url,headers=self._headers)
         
         except ValueError as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to listen to doors %s", ex)
+            _LOGGER.error("Aladdin Connect - Unable to listen to doors %s", ex)
 
         if response.status in (401):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {response.text}"

@@ -1,9 +1,11 @@
 import logging
 import json
 from typing import Callable
+
+import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect.eventsocket import EventSocket
-
+_LOGGER = logging.getLogger(__name__)
 class AladdinConnectClient:
     CONFIGURATION_ENDPOINT = "/configuration"
 
@@ -47,7 +49,7 @@ class AladdinConnectClient:
         1: STATUS_CONNECTED
     }
 
-    _LOGGER = logging.getLogger(__name__)
+    
 
     def __init__(self, email:str, password:str,attr_changed:Callable):
         self._session = SessionManager(email, password)
@@ -57,24 +59,24 @@ class AladdinConnectClient:
     
     def register_callback(self,update_callback:Callable):
         self._attr_changed = update_callback
-        self._LOGGER.debug("Registered callback")
+        _LOGGER.debug("Registered callback")
  
     async def login(self):
-        self._LOGGER.debug("Logging in")
+        _LOGGER.debug("Logging in")
         # if there is an error, trying to log back needs to stop the eventsocket
         if self._eventsocket:
             await self._eventsocket.stop()
 
         status = await self._session.login()
         if status:
-            self._LOGGER.debug("Logged in")
+            _LOGGER.debug("Logged in")
 
             await self.get_doors()
-            self._LOGGER.debug("Got initial door status")
+            _LOGGER.debug("Got initial door status")
             
             self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
             await self._eventsocket.start()
-            self._LOGGER.debug("Started Socket")
+            _LOGGER.debug("Started Socket")
             
         return status
     
@@ -99,11 +101,10 @@ class AladdinConnectClient:
 
     async def _get_devices(self):
         """Get list of devices, i.e., Aladdin Door Controllers"""
-
+        devices = []
         try:
-
             response = await self._session.get(self.CONFIGURATION_ENDPOINT)
-            devices = []
+                
             for device in response["devices"]:
                 doors = []
                 for door in device["doors"]:
@@ -121,10 +122,13 @@ class AladdinConnectClient:
                     'doors': doors
                 })
             return devices
-        except (ValueError,KeyError) as ex:
-            self._LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
+        except (KeyError) as ex:
+            _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
             return None
-
+        except (aiohttp.ClientConnectionError) as ccer:
+            _LOGGER.error("%s",ccer)
+            await self.login()
+        
     async def close_door(self, device_id, door_number):
         """Command to close the door"""
         return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
@@ -145,7 +149,7 @@ class AladdinConnectClient:
             should_ignore = error.endswith(
                 f'{{"code":400,"error":"Door is already {requested_door_status}"}}')
             if not should_ignore:
-                self._LOGGER.error("Aladdin Connect - Unable to set door status %s", ex)
+                _LOGGER.error("Aladdin Connect - Unable to set door status %s", ex)
                 return False
 
         return True
@@ -154,11 +158,13 @@ class AladdinConnectClient:
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
-    
+
+
     def get_door_status(self, device_id, door_number):
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
+
 
     async def async_get_door_link_status(self,device_id,door_number):
         for door in self._doors:

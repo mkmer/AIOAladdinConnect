@@ -9,7 +9,7 @@ from typing import Callable
 # WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4}', extra='')
 #DEBUG:waiting for event message
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 WSURI = "wss://event-caster.st1.gdocntl.net/updates"
 #WSURI = "wss://app.apps.st1.gdocntl.net/monitor"
@@ -27,7 +27,7 @@ class EventSocket:
     async def _run(self):
         if not self._running:
             return
-        LOGGER.debug("Started the web socket")
+        _LOGGER.debug(f"Started the web socket with key {self._access_token}")
         headers = {
             "Authorization": f'Bearer {self._access_token}'}
         async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
@@ -35,27 +35,27 @@ class EventSocket:
                 WSURI,  heartbeat=20
             ) as ws:
                 self._websocket = ws
-                LOGGER.debug("Opened the web socket")
+                _LOGGER.debug("Opened the web socket")
                 while not ws.closed:
-                    LOGGER.debug("waiting for message")
+                    _LOGGER.debug("waiting for message")
                     msg = await ws.receive() 
                     if not msg:
                         continue
-                    LOGGER.debug(f"event message received< {json.loads(msg)}")
+                    _LOGGER.debug(f"event message received< {msg}")
                     if msg.type == aiohttp.WSMsgType.ERROR:
-                        LOGGER.error("Socket message error")
+                        _LOGGER.error("Socket message error")
                         break
                     if msg.type in [
                         aiohttp.WSMsgType.CLOSE,
                         aiohttp.WSMsgType.CLOSING,
                         aiohttp.WSMsgType.CLOSED,
                     ]:
-                        LOGGER.debug(
+                        _LOGGER.debug(
                             f"Stopping receiving. Message type: {str(msg.type)}"
                         )
                         break
                     if msg.type != aiohttp.WSMsgType.TEXT:
-                        LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
+                        _LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
                         continue
                     
                     await self._msg_listener(msg.data)
@@ -64,8 +64,13 @@ class EventSocket:
 
         if self._running:
             # Just keep reconnecting - The AladdinConect app just reconnects forever.
-            LOGGER.info("Reconnecting...")
+            _LOGGER.info("Reconnecting...")
             self._run_future = asyncio.get_event_loop().create_task(self._run())
+
+    async def set_auth_token(self,access_token):
+        self._access_token = access_token
+        await self.stop()
+        await self.start()
 
     async def start(self):
         self._running = True
