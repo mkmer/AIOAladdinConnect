@@ -49,8 +49,6 @@ class AladdinConnectClient:
         1: STATUS_CONNECTED
     }
 
-    
-
     def __init__(self, email:str, password:str,attr_changed:Callable):
         self._session = SessionManager(email, password)
         self._eventsocket = None
@@ -200,17 +198,17 @@ class AladdinConnectClient:
         """Call back from AIO HTTP web socket with door status information"""
         # Opening and Closing only are sent if the WEB API called the open/close event
         # pressing the local button only results in a state change of open or close.
-        self._LOGGER.debug(f"Got the callback {json.loads(msg)}")
+        _LOGGER.debug(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         for door in self._doors:
             # There are multiple messages from the websocket for the same value - filter this off
             if json_msg['door'] == door['door_number'] and self.DOOR_STATUS[json_msg['door_status']] != door['status']:
                 door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
-                self._LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                _LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                 if self._attr_changed:
                     await self._attr_changed()
             else:
-                self._LOGGER.debug(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                _LOGGER.debug(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
 
     def auth_token(self):
         return self._session.auth_token()
