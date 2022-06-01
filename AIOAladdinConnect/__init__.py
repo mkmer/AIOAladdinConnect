@@ -217,7 +217,8 @@ class AladdinConnectClient:
 
     def set_auth_token(self,auth_token):
         self._session.set_auth_token(auth_token)
-        self._eventsocket.set_auth_token(auth_token)
+        if self._eventsocket:
+            self._eventsocket.set_auth_token(auth_token)
 
 
 
