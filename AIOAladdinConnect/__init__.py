@@ -210,7 +210,7 @@ class AladdinConnectClient:
                     await self._eventsocket.start()
 
             # There are multiple messages from the websocket for the same value - filter this off
-            if all(key in json_msg for key in ('serial','door','door_number')):
+            if all(key in json_msg for key in ('serial','door','door_status')):
                 if json_msg['serial'] == door['serial'] and json_msg['door'] == door['door_number'] and self.DOOR_STATUS[json_msg['door_status']] != door['status']:
                     door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                     _LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
