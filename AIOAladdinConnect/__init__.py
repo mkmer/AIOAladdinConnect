@@ -64,7 +64,6 @@ class AladdinConnectClient:
         # if there is an error, trying to log back needs to stop the eventsocket
         if self._eventsocket:
             await self._eventsocket.stop()
-
         status = await self._session.login()
         if status:
             _LOGGER.debug("Logged in")
@@ -75,7 +74,7 @@ class AladdinConnectClient:
             self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
             await self._eventsocket.start()
             _LOGGER.debug("Started Socket")
-            
+           
         return status
     
     async def close(self):
