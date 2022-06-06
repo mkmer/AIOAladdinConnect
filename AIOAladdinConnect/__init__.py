@@ -222,10 +222,12 @@ class AladdinConnectClient:
     def auth_token(self):
         return self._session.auth_token()
 
-    def set_auth_token(self,auth_token):
+    async def set_auth_token(self,auth_token):
         self._session.set_auth_token(auth_token)
+        if self._eventsocket is None:
+            self._eventsocket = EventSocket(self._session.auth_token(),self._call_back) 
         if self._eventsocket:
-            self._eventsocket.set_auth_token(auth_token)
+            await self._eventsocket.set_auth_token(auth_token)
 
 
 
