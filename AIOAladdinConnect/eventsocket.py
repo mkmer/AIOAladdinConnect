@@ -27,7 +27,7 @@ class EventSocket:
     async def _run(self):
         if not self._running:
             return
-        _LOGGER.debug(f"Started the web socket with key {self._access_token}")
+        _LOGGER.debug("Started the web socket")
         headers = {
             "Authorization": f'Bearer {self._access_token}'}
         async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
@@ -73,13 +73,16 @@ class EventSocket:
         await self.start()
 
     async def start(self):
+        _LOGGER.debug("Starting the event service")
         self._running = True
         self._run_future = asyncio.get_event_loop().create_task(self._run())
 
     async def stop(self):
+        _LOGGER.debug("Stopping the event service")
         self._running = False
         if not self._websocket:
             return
         await self._websocket.close()
         self._websocket = None
         await self._run_future
+        self._run_future = None

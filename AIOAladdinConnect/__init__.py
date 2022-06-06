@@ -205,6 +205,7 @@ class AladdinConnectClient:
             if all(key in json_msg for key in ('device_status','serial')):
                 # Server is reporting state change disconnection.  Need to restart web socket
                 if json_msg['serial'] == door['serial'] and json_msg['device_status'] == 0:
+                    _LOGGER.debug(f"Reconnecting because we Received socket disconnect message {json_msg}")
                     await self._eventsocket.stop()
                     await self._eventsocket.start()
 
