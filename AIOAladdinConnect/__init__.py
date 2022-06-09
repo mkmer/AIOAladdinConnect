@@ -52,7 +52,7 @@ class AladdinConnectClient:
     def __init__(self, email:str, password:str,attr_changed:Callable):
         self._session = SessionManager(email, password)
         self._eventsocket = None
-        self._doors = {'device_id':0}
+        self._doors = {'device_id':'0' , 'status':'closed'},{}
         self._attr_changed = attr_changed
     
     def register_callback(self,update_callback:Callable):
@@ -93,11 +93,12 @@ class AladdinConnectClient:
         if devices:
             for device in devices:
                 doors += device['doors']
-        for door,orig_door in doors,self._doors:
-            if door['status'] !=  orig_door['status']:
+        if self._eventsocket: # We have a websocket open...
+            for door,orig_door in zip(doors,self._doors):
                 # The socket has failed to keep us up to date...
-                await self._eventsocket.stop()
-                await self._eventsocket.start()
+                if door['status'] !=  orig_door['status']: 
+                    await self._eventsocket.stop()
+                    await self._eventsocket.start()
         self._doors = doors
 
         return doors
