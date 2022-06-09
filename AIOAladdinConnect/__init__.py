@@ -93,7 +93,13 @@ class AladdinConnectClient:
         if devices:
             for device in devices:
                 doors += device['doors']
+        for door,orig_door in doors,self._doors:
+            if door['status'] !=  orig_door['status']:
+                # The socket has failed to keep us up to date...
+                await self._eventsocket.stop()
+                await self._eventsocket.start()
         self._doors = doors
+
         return doors
 
     async def _get_devices(self):
