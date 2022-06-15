@@ -132,7 +132,8 @@ class AladdinConnectClient:
                 devices.append({
                     'device_id': device["id"],
                     'doors': doors
-                })
+                }
+            )
             return devices
         except (KeyError) as ex:
             _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
@@ -247,3 +248,6 @@ class AladdinConnectClient:
 
 
 
+# Web server errors seen:
+# 500 server error
+# 401 when logging in and server error is going on
