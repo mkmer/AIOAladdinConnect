@@ -93,21 +93,23 @@ class AladdinConnectClient:
 
         if self._first_door or door_number is None:
             devices = await self._get_devices()
-
+        doors = []
         if devices:
             for device in devices:
                 doors += device['doors']
-                self._doors = doors
-                
-        for door,orig_door in doors,self._doors:
-            if door['status'] !=  orig_door['status']:
-                # The socket has failed to keep us up to date...
-                await self._eventsocket.stop()
-                await self._eventsocket.start()
-  
+            
+        if self._eventsocket and door_number:        
+            for door,orig_door in zip(doors,self._doors):
+                if door['status'] !=  orig_door['status']:
+                    # The socket has failed to keep us up to date...
+                    await self._eventsocket.stop()
+                    await self._eventsocket.start()
+        if doors:
+            self._doors = doors
+        
         return self._doors
 
-
+    #@retry((aiohttp.ClientConnectionError), tries=2,delay=0,backoff=0)
     async def _get_devices(self):
         """Get list of devices, i.e., Aladdin Door Controllers"""
         devices = []
