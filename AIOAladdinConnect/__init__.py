@@ -1,5 +1,6 @@
 import logging
 import json
+from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
 
 import aiohttp
@@ -49,14 +50,15 @@ class AladdinConnectClient:
         1: STATUS_CONNECTED
     }
 
-    def __init__(self, email:str, password:str,attr_changed:Callable):
+    def __init__(self, email:str, password:str):
         self._session = SessionManager(email, password)
         self._eventsocket = None
-        self._doors = {'device_id':0}
-        self._attr_changed = attr_changed
+        self._doors = {'device_id':'0' , 'status':'closed'},{}
+        self._attr_changed :dict(int,Callable) = {}
+        self._first_door = None
     
-    def register_callback(self,update_callback:Callable):
-        self._attr_changed = update_callback
+    def register_callback(self,update_callback:Callable,door_number:int):
+        self._attr_changed.update({door_number:update_callback})
         _LOGGER.debug("Registered callback")
  
     async def login(self):
@@ -83,12 +85,14 @@ class AladdinConnectClient:
             await self._eventsocket.stop()
         return True
 
-    async def get_doors(self):
+    async def get_doors(self,door_number:int = None):
         """Get all doors status and store values 
             This function should be called intermittently to update all door information"""
-        devices = await self._get_devices()
+        if door_number and self._first_door is None:
+            self._first_door = door_number # only update on the first door registered.
 
-        doors = []
+        if self._first_door or door_number is None:
+            devices = await self._get_devices()
 
         if devices:
             for device in devices:
@@ -101,7 +105,8 @@ class AladdinConnectClient:
                 await self._eventsocket.stop()
                 await self._eventsocket.start()
   
-        return doors
+        return self._doors
+
 
     async def _get_devices(self):
         """Get list of devices, i.e., Aladdin Door Controllers"""
@@ -125,7 +130,8 @@ class AladdinConnectClient:
                 devices.append({
                     'device_id': device["id"],
                     'doors': doors
-                })
+                }
+            )
             return devices
         except (KeyError) as ex:
             _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
@@ -134,15 +140,15 @@ class AladdinConnectClient:
             _LOGGER.error("%s",ccer)
             await self.login()
         
-    async def close_door(self, device_id, door_number):
+    async def close_door(self, device_id:int, door_number:int):
         """Command to close the door"""
         return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
 
-    async def open_door(self, device_id, door_number):
+    async def open_door(self, device_id:int, door_number:int):
         """Command to open the door"""
         return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_OPEN)
 
-    async def _set_door_status(self, device_id, door_number, requested_door_status):
+    async def _set_door_status(self, device_id:int, door_number:int, requested_door_status:DOOR_STATUS):
         """Set door state"""
         payload = {"command_key": self.REQUEST_DOOR_STATUS_COMMAND[requested_door_status]}
 
@@ -159,7 +165,7 @@ class AladdinConnectClient:
 
         return True
 
-    async def async_get_door_status(self, device_id, door_number):
+    async def async_get_door_status(self, device_id:int, door_number:int):
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
@@ -221,8 +227,10 @@ class AladdinConnectClient:
                 if json_msg['serial'] == door['serial'] and json_msg['door'] == door['door_number'] and self.DOOR_STATUS[json_msg['door_status']] != door['status']:
                     door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                     _LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
-                    if self._attr_changed:
-                        await self._attr_changed()
+                    if self._attr_changed: # There is a callback 
+                        for door_key in self._attr_changed:  
+                            if json_msg['door'] == door_key: #the door is registered as a callback 
+                                await self._attr_changed[json_msg['door']]() # callback the door triggered
                 else:
                     _LOGGER.debug(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
 
@@ -238,3 +246,6 @@ class AladdinConnectClient:
 
 
 
+# Web server errors seen:
+# 500 server error
+# 401 when logging in and server error is going on
