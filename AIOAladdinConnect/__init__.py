@@ -104,44 +104,47 @@ class AladdinConnectClient:
                     # The socket has failed to keep us up to date...
                     await self._eventsocket.stop()
                     await self._eventsocket.start()
-        if doors:
-            self._doors = doors
+        self._doors = doors
         
         return self._doors
 
-    #@retry((aiohttp.ClientConnectionError), tries=2,delay=0,backoff=0)
     async def _get_devices(self):
         """Get list of devices, i.e., Aladdin Door Controllers"""
         devices = []
-        try:
-            response = await self._session.get(self.CONFIGURATION_ENDPOINT)
-                
-            for device in response["devices"]:
-                doors = []
-                for door in device["doors"]:
-                    doors.append({
+        attempts = 0
+        while attempts < 2: # if the key expires, log in and try this again
+            try:
+                response = await self._session.get(self.CONFIGURATION_ENDPOINT)
+                    
+                for device in response["devices"]:
+                    doors = []
+                    for door in device["doors"]:
+                        doors.append({
+                            'device_id': device["id"],
+                            'door_number': door["door_index"],
+                            'name': door["name"],
+                            'status': self.DOOR_STATUS[door["status"]],
+                            'link_status': self.DOOR_LINK_STATUS[door["link_status"]],
+                            'battery_level': door["battery_level"],
+                            'rssi': device['rssi'],
+                            'serial': device['legacy_id'],
+                        })
+                    devices.append({
                         'device_id': device["id"],
-                        'door_number': door["door_index"],
-                        'name': door["name"],
-                        'status': self.DOOR_STATUS[door["status"]],
-                        'link_status': self.DOOR_LINK_STATUS[door["link_status"]],
-                        'battery_level': door["battery_level"],
-                        'rssi': device['rssi'],
-                        'serial': device['legacy_id'],
-                    })
-                devices.append({
-                    'device_id': device["id"],
-                    'doors': doors
-                }
-            )
-            return devices
-        except (KeyError) as ex:
-            _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
-            return None
-        except (aiohttp.ClientConnectionError) as ccer:
-            _LOGGER.error("%s",ccer)
-            await self.login()
-        
+                        'doors': doors
+                    }
+                )
+                return devices
+            except (KeyError) as ex:
+                _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
+                return None
+
+            except (aiohttp.ClientConnectionError) as ccer:
+                _LOGGER.error("%s",ccer)
+                await self.login()
+                attempts +=1
+        return None            
+            
     async def close_door(self, device_id:int, door_number:int):
         """Command to close the door"""
         return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)
