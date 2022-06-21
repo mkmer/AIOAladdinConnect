@@ -87,7 +87,7 @@ class SessionManager:
         try:
             response = await self._session.get(url ,headers=self._headers)
             if response:
-                _LOGGER.debug(f"Get message: {response}")
+                _LOGGER.debug(f"Get message: {await response.text()}")
 
             if response.content_type == "application/json":
                 return await response.json()
@@ -127,15 +127,17 @@ class SessionManager:
             _LOGGER.error("Aladdin Connect - Unable to listen to doors %s", ex)
 
         if response.status in (401):
-            msg = f"Aladdin API call ({url}) failed: {response.status}, {response.text}"
+            msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"
             raise aiohttp.ClientConnectionError(msg)
             
         if response.status not in (200, 204):
-            msg = f"Aladdin API call ({url}) failed: {response.status}, {response.text}"
+            msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"
             raise ValueError(msg)
         
         if response.content_type == "application/json":
             return await response.json()
         
-        return None
+        msg = f"Aladdin API call ({url}) incorrect content type: {response.content_type}"
+        raise ValueError(msg)
+        
 
