@@ -59,23 +59,23 @@ class AladdinConnectClient:
     
     def register_callback(self,update_callback:Callable,door_number:int):
         self._attr_changed.update({door_number:update_callback})
-        _LOGGER.debug("Registered callback")
+        _LOGGER.info("Registered callback")
  
     async def login(self):
-        _LOGGER.debug("Logging in")
+        _LOGGER.info("Logging in")
         # if there is an error, trying to log back needs to stop the eventsocket
         if self._eventsocket:
             await self._eventsocket.stop()
         status = await self._session.login()
         if status:
-            _LOGGER.debug("Logged in")
+            _LOGGER.info("Logged in")
 
             await self.get_doors()
-            _LOGGER.debug("Got initial door status")
+            _LOGGER.info("Got initial door status")
             
             self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
             await self._eventsocket.start()
-            _LOGGER.debug("Started Socket")
+            _LOGGER.info("Started Socket")
            
         return status
     
@@ -212,32 +212,32 @@ class AladdinConnectClient:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
 
-    async def _call_back(self,msg):
+    async def _call_back(self,msg)-> bool:
         """Call back from AIO HTTP web socket with door status information"""
         # Opening and Closing only are sent if the WEB API called the open/close event
         # pressing the local button only results in a state change of open or close.
-        _LOGGER.debug(f"Got the callback {json.loads(msg)}")
+        _LOGGER.info(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         
         for door in self._doors:
             if all(key in json_msg for key in ('device_status','serial')):
                 # Server is reporting state change disconnection.  Need to restart web socket
                 if json_msg['serial'] == door['serial'] and json_msg['device_status'] == 0:
-                    _LOGGER.debug(f"Reconnecting because we Received socket disconnect message {json_msg}")
-                    await self._eventsocket.stop()
-                    await self._eventsocket.start()
+                    _LOGGER.info(f"Reconnecting because we Received socket disconnect message {json_msg}")
+                    return False
 
             # There are multiple messages from the websocket for the same value - filter this off
             if all(key in json_msg for key in ('serial','door','door_status')):
                 if json_msg['serial'] == door['serial'] and json_msg['door'] == door['door_number'] and self.DOOR_STATUS[json_msg['door_status']] != door['status']:
                     door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
-                    _LOGGER.debug(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                    _LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                     if self._attr_changed: # There is a callback 
                         for door_key in self._attr_changed:  
                             if json_msg['door'] == door_key: #the door is registered as a callback 
                                 await self._attr_changed[json_msg['door']]() # callback the door triggered
                 else:
-                    _LOGGER.debug(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
+                    _LOGGER.info(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
+        return True
 
     def auth_token(self):
         return self._session.auth_token()

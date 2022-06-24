@@ -27,7 +27,7 @@ class EventSocket:
     async def _run(self):
         if not self._running:
             return
-        _LOGGER.debug("Started the web socket")
+        _LOGGER.info("Started the web socket")
         headers = {
             "Authorization": f'Bearer {self._access_token}'}
         async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
@@ -35,9 +35,9 @@ class EventSocket:
                 WSURI,  heartbeat=20
             ) as ws:
                 self._websocket = ws
-                _LOGGER.debug("Opened the web socket")
+                _LOGGER.info("Opened the web socket")
                 while not ws.closed:
-                    _LOGGER.debug("waiting for message")
+                    _LOGGER.info("waiting for message")
                     msg = await ws.receive() 
                     if not msg:
                         continue
@@ -50,7 +50,7 @@ class EventSocket:
                         aiohttp.WSMsgType.CLOSING,
                         aiohttp.WSMsgType.CLOSED,
                     ]:
-                        _LOGGER.debug(
+                        _LOGGER.info(
                             f"Stopping receiving. Message type: {str(msg.type)}"
                         )
                         break
@@ -58,7 +58,10 @@ class EventSocket:
                         _LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
                         continue
                     
-                    await self._msg_listener(msg.data)
+                    if not await self._msg_listener(msg.data):
+                        # The message listener received a disconnect message or other failure
+                        _LOGGER.info("Restarting Websocket due to device status message")
+                        break
 
         self._websocket = None
 
@@ -73,16 +76,16 @@ class EventSocket:
         await self.start()
 
     async def start(self):
-        _LOGGER.debug("Starting the event service")
+        _LOGGER.info("Starting the event service")
         self._running = True
         self._run_future = asyncio.get_event_loop().create_task(self._run())
 
     async def stop(self):
-        _LOGGER.debug("Stopping the event service")
+        _LOGGER.info("Stopping the event service")
         self._running = False
         if not self._websocket:
             return
         await self._websocket.close()
         self._websocket = None
-        await self._run_future
+        self._run_future
         self._run_future = None

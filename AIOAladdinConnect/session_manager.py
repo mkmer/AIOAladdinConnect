@@ -43,7 +43,7 @@ class SessionManager:
         self._headers.update({'Authorization': f'Bearer {self._auth_token}'})
 
 
-    async def login(self):
+    async def login(self) -> bool:
         self._auth_token = None
         self._logged_in = False
         password_base64 = base64.b64encode(self._password.encode('utf-8')).decode('utf-8')
