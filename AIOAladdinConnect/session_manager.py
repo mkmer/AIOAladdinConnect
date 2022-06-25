@@ -20,9 +20,9 @@ class SessionManager:
 
     
 
-    def __init__(self, email, password):
+    def __init__(self, email, password, session):
         self._timeout = aiohttp.ClientTimeout(total=30)
-        self._session = aiohttp.ClientSession(timeout = self._timeout)
+        self._session = session #aiohttp.ClientSession(timeout = self._timeout)
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
                                       'AppVersion': self.HEADER_APP_VERSION,
                                       'BundleName': self.HEADER_BUNDLE_NAME,

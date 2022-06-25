@@ -50,8 +50,8 @@ class AladdinConnectClient:
         1: STATUS_CONNECTED
     }
 
-    def __init__(self, email:str, password:str):
-        self._session = SessionManager(email, password)
+    def __init__(self, email:str, password:str, session):
+        self._session = SessionManager(email, password, session)
         self._eventsocket = None
         self._doors = {'device_id':'0' , 'status':'closed'},{}
         self._attr_changed :dict(int,Callable) = {}
