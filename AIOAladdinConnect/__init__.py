@@ -125,8 +125,8 @@ class AladdinConnectClient:
                             'name': door["name"],
                             'status': self.DOOR_STATUS[door["status"]],
                             'link_status': self.DOOR_LINK_STATUS[door["link_status"]],
-                            'battery_level': door["battery_level"],
-                            'rssi': device['rssi'],
+                            'battery_level': door.get("battery_level",0),
+                            'rssi': device.get('rssi',0),
                             'serial': device['legacy_id'],
                         })
                     devices.append({
