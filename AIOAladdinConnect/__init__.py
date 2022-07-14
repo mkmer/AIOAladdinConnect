@@ -123,11 +123,14 @@ class AladdinConnectClient:
                             'device_id': device["id"],
                             'door_number': door["door_index"],
                             'name': door["name"],
-                            'status': self.DOOR_STATUS[door["status"]],
-                            'link_status': self.DOOR_LINK_STATUS[door["link_status"]],
+                            'status': self.DOOR_STATUS[door.get("status",0)],
+                            'link_status': self.DOOR_LINK_STATUS[door.get("link_status",0)],
                             'battery_level': door.get("battery_level",0),
                             'rssi': device.get('rssi',0),
-                            'serial': device.get('legacy_id',0),
+                            'serial': device["serial"][:-3],
+                            'vendor': device.get("vendor",""),
+                            'model' : device.get("model",""),
+
                         })
                     devices.append({
                         'device_id': device["id"],
