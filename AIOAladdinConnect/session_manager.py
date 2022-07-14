@@ -6,10 +6,12 @@ import aiohttp
 _LOGGER = logging.getLogger(__name__)
 class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
-    HEADER_USER_AGENT = "okhttp/3.12.1"
+    HEADER_USER_AGENT = "Home Assistant"
     HEADER_BUNDLE_NAME = "com.geniecompany.AladdinConnect"
     HEADER_BUILD_VERSION = "2042"
     HEADER_APP_VERSION = "5.30"
+
+    CLIENT_ID = "1000"
 
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
     RPC_URL = API_BASE_URL
@@ -48,7 +50,7 @@ class SessionManager:
         self._logged_in = False
         password_base64 = base64.b64encode(self._password.encode('utf-8')).decode('utf-8')
         payload = {"grant_type": "password",
-                    "client_id": "1000",
+                    "client_id": self.CLIENT_ID,
                     "brand": "ALADDIN",
                     "username": self._user_email,
                     "password": password_base64,
