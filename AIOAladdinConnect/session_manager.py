@@ -6,9 +6,6 @@ import aiohttp
 _LOGGER = logging.getLogger(__name__)
 class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
-    HEADER_USER_AGENT = "Home Assistant"
-    HEADER_BUNDLE_NAME = "com.geniecompany.AladdinConnect"
-    HEADER_BUILD_VERSION = "2042"
 
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
     RPC_URL = API_BASE_URL
@@ -23,8 +20,6 @@ class SessionManager:
         self._timeout = aiohttp.ClientTimeout(total=30)
         self._session = session #aiohttp.ClientSession(timeout = self._timeout)
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
-                                      'BundleName': self.HEADER_BUNDLE_NAME,
-                                      'User-Agent': self.HEADER_USER_AGENT,
                                       'X-Api-Key': self.X_API_KEY}
         self._auth_token = None
         self._user_email = email
