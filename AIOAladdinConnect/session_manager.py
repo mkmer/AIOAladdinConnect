@@ -9,9 +9,6 @@ class SessionManager:
     HEADER_USER_AGENT = "Home Assistant"
     HEADER_BUNDLE_NAME = "com.geniecompany.AladdinConnect"
     HEADER_BUILD_VERSION = "2042"
-    HEADER_APP_VERSION = "5.30"
-
-    CLIENT_ID = "1000"
 
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
     RPC_URL = API_BASE_URL
@@ -22,19 +19,18 @@ class SessionManager:
 
     
 
-    def __init__(self, email, password, session):
+    def __init__(self, email, password, session, client_id):
         self._timeout = aiohttp.ClientTimeout(total=30)
         self._session = session #aiohttp.ClientSession(timeout = self._timeout)
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
-                                      'AppVersion': self.HEADER_APP_VERSION,
                                       'BundleName': self.HEADER_BUNDLE_NAME,
                                       'User-Agent': self.HEADER_USER_AGENT,
-                                      'BuildVersion': self.HEADER_BUILD_VERSION,
                                       'X-Api-Key': self.X_API_KEY}
         self._auth_token = None
         self._user_email = email
         self._password = password
         self._logged_in = False
+        self._client_id = client_id
     
 
     def auth_token(self):
@@ -50,7 +46,7 @@ class SessionManager:
         self._logged_in = False
         password_base64 = base64.b64encode(self._password.encode('utf-8')).decode('utf-8')
         payload = {"grant_type": "password",
-                    "client_id": self.CLIENT_ID,
+                    "client_id": self._client_id,
                     "brand": "ALADDIN",
                     "username": self._user_email,
                     "password": password_base64,
