@@ -130,6 +130,7 @@ class AladdinConnectClient:
                             'serial': device["serial"][:-3],
                             'vendor': device.get("vendor",""),
                             'model' : device.get("model",""),
+                            'ble_strength' : door.get("ble_strength",0),
 
                         })
                     devices.append({
