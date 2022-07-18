@@ -8,10 +8,10 @@ Note that shared doors are not currently supported, only doors that are owned by
 from AIOAladdinConnect import AladdinConnectClient
 
 # Create session using aladdin connect credentials
-client = AladdinConnectClient(email, password, callback)
-await client.login("username","password",callback)
-or
-await client.login("username","password",None)
+client_id = 1000
+client_session = aiohttp.ClientSession(timeout = aiohttp.ClientTimeout(total=30))
+client = AladdinConnectClient(email, password, client_session, client_id)
+await client.login()
 
 # Get list of available doors and their status
 doors = await client.get_doors()
