@@ -53,12 +53,12 @@ class AladdinConnectClient:
     def __init__(self, email:str, password:str, session, client_id:str):
         self._session = SessionManager(email, password, session, client_id)
         self._eventsocket = None
-        self._doors = {'device_id':'0' , 'status':'closed'},{}
+        self._doors = {'device_id':'0' , 'status':'closed','serial':"0000000000"},{}
         self._attr_changed :dict(int,Callable) = {}
         self._first_door = None
     
-    def register_callback(self,update_callback:Callable,door_number:int):
-        self._attr_changed.update({door_number:update_callback})
+    def register_callback(self,update_callback:Callable,serial:str):
+        self._attr_changed.update({serial:update_callback})
         _LOGGER.info("Registered callback")
  
     async def login(self):
@@ -85,20 +85,20 @@ class AladdinConnectClient:
             await self._eventsocket.stop()
         return True
 
-    async def get_doors(self,door_number:int = None):
+    async def get_doors(self,serial:str = None):
         """Get all doors status and store values 
             This function should be called intermittently to update all door information"""
-        if door_number and self._first_door is None:
-            self._first_door = door_number # only update on the first door registered.
+        if serial and self._first_door is None:
+            self._first_door = serial # only update on the first door registered.
 
-        if self._first_door or door_number is None:
+        if self._first_door or serial is None:
             devices = await self._get_devices()
         doors = []
         if devices:
             for device in devices:
                 doors += device['doors']
             
-        if self._eventsocket and door_number:        
+        if self._eventsocket and serial:        
             for door,orig_door in zip(doors,self._doors):
                 if door['status'] !=  orig_door['status']:
                     # The socket has failed to keep us up to date...
@@ -236,8 +236,8 @@ class AladdinConnectClient:
                     door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                     _LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                     if self._attr_changed: # There is a callback 
-                        for door_key in self._attr_changed:  
-                            if json_msg['door'] == door_key: #the door is registered as a callback 
+                        for serial in self._attr_changed:  
+                            if json_msg['serial'] == serial: #the door is registered as a callback 
                                 await self._attr_changed[json_msg['door']]() # callback the door triggered
                 else:
                     _LOGGER.info(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
