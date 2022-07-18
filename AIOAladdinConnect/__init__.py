@@ -238,7 +238,7 @@ class AladdinConnectClient:
                     if self._attr_changed: # There is a callback 
                         for serial in self._attr_changed:  
                             if json_msg['serial'] == serial: #the door is registered as a callback 
-                                await self._attr_changed[json_msg['door']]() # callback the door triggered
+                                await self._attr_changed[serial]() # callback the door triggered
                 else:
                     _LOGGER.info(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
         return True
