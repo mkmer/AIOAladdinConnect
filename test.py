@@ -11,7 +11,7 @@ async def main():
         _LOGGER.debug("I've been calledback at the top")
 
     _LOGGER.debug("I've started")
-    password = "Your Passowrd"
+    password = "Your password"
     username = "your username"
     session_x = aiohttp.ClientSession(timeout = aiohttp.ClientTimeout(total=30))
     session = AladdinConnectClient(username,password,session_x,CLIENT_ID)
