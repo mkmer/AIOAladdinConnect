@@ -9,6 +9,7 @@ from AIOAladdinConnect.eventsocket import EventSocket
 _LOGGER = logging.getLogger(__name__)
 class AladdinConnectClient:
     CONFIGURATION_ENDPOINT = "/configuration"
+    DEVICE_ENDPOINT = "/devices/"
 
     DOOR_STATUS_OPEN = 'open'
     DOOR_STATUS_CLOSED = 'closed'
@@ -149,6 +150,49 @@ class AladdinConnectClient:
                 attempts +=1
         return None            
             
+
+    async def get_device(self,device_id):
+        """Get list of devices, i.e., Aladdin Door Controllers"""
+        devices = []
+        attempts = 0
+        while attempts < 2: # if the key expires, log in and try this again
+            try:
+                response = await self._session.get(self.DEVICE_ENDPOINT + str(device_id))
+                _LOGGER.debug (f"Device only: {response}")
+                    
+            
+                doors = []
+                for door in response["doors"]:
+                    doors.append({
+                        'device_id': device_id,
+                        'door_number': door["door_index"],
+                        'name': door["name"],
+                        'status': self.DOOR_STATUS[door.get("status",0)],
+                        'link_status': self.DOOR_LINK_STATUS[door.get("link_status",0)],
+                        'battery_level': door.get("battery_level",0),
+                        'rssi': response.get('rssi',0),
+                        'serial': response["serial"][:-3],
+                        'vendor': response.get("vendor",""),
+                        'model' : response.get("model",""),
+                        'ble_strength' : door.get("ble_strength",0),
+
+                    })
+                devices.append({
+                    'device_id': device_id,
+                    'doors': doors
+                }
+            )
+                return devices
+            except (KeyError) as ex:
+                _LOGGER.error("Aladdin Connect - Unable to retrieve configuration %s", ex)
+                return None
+
+            except (aiohttp.ClientConnectionError) as ccer:
+                _LOGGER.error("%s",ccer)
+                await self.login()
+                attempts +=1
+        return None         
+
     async def close_door(self, device_id:int, door_number:int):
         """Command to close the door"""
         return await self._set_door_status(device_id, door_number, self.DOOR_STATUS_CLOSED)

@@ -8,17 +8,19 @@ class SessionManager:
     HEADER_CONTENT_TYPE_URLENCODED = 'application/x-www-form-urlencoded'
 
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
+    #API_BASE_URL = "https://16375mc41i.execute-api.us-east-1.amazonaws.com/IOS"
     RPC_URL = API_BASE_URL
 
     LOGIN_ENDPOINT = "/oauth/token"
-    X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW"
+    X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW" #Android
+    #X_API_KEY = "2BcHhgzjAa58BXkpbYM977jFvr3pJUhH52nflMuS" # IOS
     
 
     
 
     def __init__(self, email, password, session, client_id):
         self._timeout = aiohttp.ClientTimeout(total=30)
-        self._session = session #aiohttp.ClientSession(timeout = self._timeout)
+        self._session = session
         self._headers = {'Content-Type': self.HEADER_CONTENT_TYPE_URLENCODED,
                                       'X-Api-Key': self.X_API_KEY}
         self._auth_token = None
