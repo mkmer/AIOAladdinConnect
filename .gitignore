@@ -1,4 +1,3 @@
-test.py
 __pycache__/*
 AIOAladdinConnect/__pycache__/*
 
@@ -11,3 +10,4 @@ AIOAladdinConnect/__pycache__/*
 dist/*
 AIOAladdinConnect/tests/__pycache__/test_init.cpython-39-pytest-7.1.2.pyc
 dist/AIOAladdinConnect-0.1.6.tar.gz
+test_dont_share.py
