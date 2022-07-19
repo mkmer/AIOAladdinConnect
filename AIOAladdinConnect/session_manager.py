@@ -45,11 +45,12 @@ class SessionManager:
                     "brand": "ALADDIN",
                     "username": self._user_email,
                     "password": password_base64,
-                    "platform": "platform",
-                    "model": "Google Pixel 6",
                     "app_version": "5.30",
-                    "build_number": "2042",
-                    "os_version": "12.0.0"}
+                    #"platform": "platform",
+                    #"model": "Google Pixel 6",
+                    #"build_number": "2042",
+                    #"os_version": "12.0.0"
+                    }
 
 
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
