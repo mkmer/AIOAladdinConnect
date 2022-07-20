@@ -12,6 +12,7 @@ class SessionManager:
     RPC_URL = API_BASE_URL
 
     LOGIN_ENDPOINT = "/oauth/token"
+    LOGOUT_ENDPOINT = "/session/logout"
     X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW" #Android
     #X_API_KEY = "2BcHhgzjAa58BXkpbYM977jFvr3pJUhH52nflMuS" # IOS
     
@@ -77,7 +78,13 @@ class SessionManager:
         return False
 
     async def close(self):
+        _LOGGER.debug("Logging out & closing socket")
         if self._session:
+            self._headers.update({'Content-Type' : 'application/json'})
+            url = self.API_BASE_URL + self.LOGOUT_ENDPOINT
+            response = await self._session.post(url ,headers=self._headers)
+            if response.status != 200:
+                raise aiohttp.ClientConnectionError(f"Server reported Error {response}")
             await self._session.close()
 
     async def get(self,endpoint:str):
