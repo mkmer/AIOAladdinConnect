@@ -9,7 +9,7 @@ from AIOAladdinConnect.eventsocket import EventSocket
 _LOGGER = logging.getLogger(__name__)
 class AladdinConnectClient:
     CONFIGURATION_ENDPOINT = "/configuration"
-    DEVICE_ENDPOINT = "/devices/"
+    DEVICE_ENDPOINT = "/devices"
 
     DOOR_STATUS_OPEN = 'open'
     DOOR_STATUS_CLOSED = 'closed'
@@ -115,7 +115,7 @@ class AladdinConnectClient:
         attempts = 0
         while attempts < 2: # if the key expires, log in and try this again
             try:
-                response = await self._session.get(self.CONFIGURATION_ENDPOINT)
+                response = await self._session.get(self.DEVICE_ENDPOINT)
                     
                 for device in response["devices"]:
                     doors = []
@@ -157,7 +157,7 @@ class AladdinConnectClient:
         attempts = 0
         while attempts < 2: # if the key expires, log in and try this again
             try:
-                response = await self._session.get(self.DEVICE_ENDPOINT + str(device_id))
+                response = await self._session.get(self.DEVICE_ENDPOINT + "/" + str(device_id))
                 _LOGGER.debug (f"Device only: {response}")
                     
             
