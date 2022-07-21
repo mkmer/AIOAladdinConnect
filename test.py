@@ -29,21 +29,20 @@ async def main():
     else:
         await session.close()
         return
-    #await session.close()
-    session2 = session
+    # await session.close()
     # session2 = AladdinConnectClient(username,password,mycallback)
     # await session2.set_auth_token(auth)
-    session2.register_callback(mycallback,my_serial)
+    session.register_callback(mycallback,my_serial)
 
-    doors = await session2.get_doors()
+    doors = await session.get_doors()
     _LOGGER.debug(f"status< {doors}")
     x = 0
     c = 0
     while(1):
-        doors = await session2.get_doors(my_serial)
+        doors = await session.get_doors(my_serial)
         _LOGGER.debug(f"Doors< {doors}")
         if doors:
-            door = await session2.async_get_door_status(my_device,my_door)
+            door = await session.async_get_door_status(my_device,my_door)
             if door:
                 x=x+1
                 _LOGGER.debug(f"status< {door}   Count {x}")
@@ -52,7 +51,7 @@ async def main():
             #await session._call_back("""{"serial":"F0AD4E03A9FE","device_status":"0"}""")
         c = c + 1
         
-    await session2.close()
+    await session.close()
 
 
     
