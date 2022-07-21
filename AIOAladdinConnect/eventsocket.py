@@ -53,6 +53,7 @@ class EventSocket:
                         _LOGGER.info(
                             f"Stopping receiving. Message type: {str(msg.type)}"
                         )
+                        await self._msg_listener(None) # tell message listener to read the door status
                         break
                     if msg.type != aiohttp.WSMsgType.TEXT:
                         _LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")

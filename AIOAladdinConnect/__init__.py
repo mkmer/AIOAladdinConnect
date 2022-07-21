@@ -264,6 +264,14 @@ class AladdinConnectClient:
         """Call back from AIO HTTP web socket with door status information"""
         # Opening and Closing only are sent if the WEB API called the open/close event
         # pressing the local button only results in a state change of open or close.
+        
+        if msg is None: # the socket was closed - update via polling
+            _LOGGER.info("Got reset message")
+            self.get_doors()
+            for callback in self._attr_changed:
+                callback() # Notify all doors that there has been an update
+            return False
+
         _LOGGER.info(f"Got the callback {json.loads(msg)}")
         json_msg = json.loads(msg)
         
