@@ -91,6 +91,7 @@ class SessionManager:
         url = self.API_BASE_URL + endpoint
         self._headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
         try:
+            _LOGGER.info("Updating door status")
             response = await self._session.get(url ,headers=self._headers)
             if response:
                 _LOGGER.debug(f"Get message: {await response.text()}")
@@ -109,6 +110,7 @@ class SessionManager:
         self._headers.update({'Content-Type': 'application/json'})
         url = self.API_BASE_URL + api
         try:
+            _LOGGER.info (f"Sending message: {payload}")
             response = await self._session.post(url,json=payload,headers=self._headers)
         
         except ValueError as ex:
