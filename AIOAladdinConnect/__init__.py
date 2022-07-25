@@ -268,8 +268,8 @@ class AladdinConnectClient:
         if msg is None: # the socket was closed - update via polling
             _LOGGER.info("Got reset message")
             self.get_doors()
-            for callback in self._attr_changed:
-                callback() # Notify all doors that there has been an update
+            for serial in self._attr_changed:
+                self._attr_changed[serial]() # Notify all doors that there has been an update
             return False
 
         _LOGGER.info(f"Got the callback {json.loads(msg)}")
