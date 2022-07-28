@@ -78,9 +78,12 @@ class EventSocket:
         await self.start()
 
     async def start(self):
-        _LOGGER.info("Starting the event service")
-        self._running = True
-        self._run_future = asyncio.get_event_loop().create_task(self._run())
+        if self._running is False:
+            _LOGGER.info("Starting the event service")
+            self._running = True
+            self._run_future = asyncio.get_event_loop().create_task(self._run())
+        else:
+            _LOGGER.info("Trying to start an already running event service")
 
     async def stop(self):
         _LOGGER.info("Stopping the event service")
