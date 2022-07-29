@@ -260,6 +260,17 @@ class AladdinConnectClient:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
 
+    async def async_get_ble_strength(self,device_id,door_number):
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["ble_strength"]
+
+    def get_ble_strength(self,device_id,door_number):
+        for door in self._doors:
+            if door["device_id"] == device_id and door["door_number"] == door_number:
+                return door["ble_strength"]
+
+
     async def _call_back(self,msg)-> bool:
         """Call back from AIO HTTP web socket with door status information"""
         # Opening and Closing only are sent if the WEB API called the open/close event

@@ -31,8 +31,20 @@ await client.async_get_door_link_status(my_door['device_id'], my_door['door_numb
 client.get_door_link_status(my_door['device_id'], my_door['door_number'])
 
 # Get Door Batery status from internal structure. Must call client.get_doors() to update structure
-await client.async_get_battery_status(my_door['device_id'], my_door['door_number'])
 client.get_battery_status(my_door['device_id'], my_door['door_number'])
+client.get_rssi_status(my_door['device_id'], my_door['door_number'])
+client.get_ble_strength(my_door['device_id'], my_door['door_number'])
+
+ble_strength and battery_status are utilized with the retrofit devices (ALKT1-RB) where the door 
+position sensor has a BLE connection and battery level reported.  Other devices (actual door openers)
+tend to report 0 for these values.
+
+
+Async versions by appending async (example):
+await client.async_get_battery_status(my_door['device_id'], my_door['door_number'])
+await client.async_get_rssi_status(my_door['device_id'], my_door['door_number'])
+await client.aycn_get_ble_strength(my_door['device_id'], my_door['door_number'])
+
 
 #assign callback for event based status updates:
 client.register_callback(your_callback_function)
