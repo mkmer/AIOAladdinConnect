@@ -92,5 +92,5 @@ class EventSocket:
             return
         await self._websocket.close()
         self._websocket = None
-        self._run_future
+        self._run_future.cancel()
         self._run_future = None
