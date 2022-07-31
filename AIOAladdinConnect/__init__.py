@@ -2,6 +2,7 @@ import logging
 import json
 from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
+from datetime import datetime
 
 import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
@@ -113,6 +114,11 @@ class AladdinConnectClient:
         """Get list of devices, i.e., Aladdin Door Controllers"""
         devices = []
         attempts = 0
+        if self._session._expire_time < datetime.now(): # Reconnect at 1/2 the expiration time
+            _LOGGER.info("Resetting websocket at 1/2 expiration time")
+            await self._eventsocket.stop()
+            await self._eventsocket.start()
+
         while attempts < 2: # if the key expires, log in and try this again
             try:
                 response = await self._session.get(self.DEVICE_ENDPOINT)

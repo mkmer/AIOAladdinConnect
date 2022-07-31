@@ -1,4 +1,5 @@
 import base64
+from datetime import datetime,timedelta
 import logging
 from typing import Any
 import aiohttp
@@ -29,6 +30,8 @@ class SessionManager:
         self._password = password
         self._logged_in = False
         self._client_id = client_id
+        self._expires_in = None
+        self._expire_time = None
     
 
     def auth_token(self):
@@ -70,6 +73,8 @@ class SessionManager:
             if response_json and "access_token" in response_json:
                 self._logged_in = True
                 self._auth_token = response_json["access_token"]
+                self._expires_in = response_json["expires_in"]
+                self._expire_time = datetime.now() + timedelta(seconds = (self._expires_in/2))
                 self._headers.update({'Authorization': f'Bearer {self._auth_token}'})
                 return True
         except ValueError as ex:
@@ -90,6 +95,7 @@ class SessionManager:
     async def get(self,endpoint:str):
         url = self.API_BASE_URL + endpoint
         self._headers.update({'Content-Type': 'application/x-www-form-urlencoded'})
+
         try:
             _LOGGER.info("Updating door status")
             response = await self._session.get(url ,headers=self._headers)
@@ -148,4 +154,5 @@ class SessionManager:
         msg = f"Aladdin API call ({url}) incorrect content type: {response.content_type}"
         raise ValueError(msg)
         
-
+def expire_time(self):
+    return self._expire_time
