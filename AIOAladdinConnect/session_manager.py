@@ -57,7 +57,7 @@ class SessionManager:
 
 
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
-        _LOGGER.debug(f"Sending paylod: {payload}")
+        _LOGGER.debug(f"Sending payload: {payload}")
         try:
             response = await self._session.post(url ,data=payload,headers=self._headers)
             _LOGGER.debug(f"Received Response: {response}")
