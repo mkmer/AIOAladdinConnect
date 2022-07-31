@@ -30,9 +30,7 @@ class SessionManager:
         self._password = password
         self._logged_in = False
         self._client_id = client_id
-        self._expires_in = None
-        self._expire_time = None
-    
+        self._expires_in = None    
 
     def auth_token(self):
         return self._auth_token
@@ -74,7 +72,6 @@ class SessionManager:
                 self._logged_in = True
                 self._auth_token = response_json["access_token"]
                 self._expires_in = response_json["expires_in"]
-                self._expire_time = datetime.now() + timedelta(seconds = (self._expires_in/2))
                 self._headers.update({'Authorization': f'Bearer {self._auth_token}'})
                 return True
         except ValueError as ex:
@@ -154,5 +151,5 @@ class SessionManager:
         msg = f"Aladdin API call ({url}) incorrect content type: {response.content_type}"
         raise ValueError(msg)
         
-def expire_time(self):
-    return self._expire_time
+def expires_in(self):
+    return self._expires_in

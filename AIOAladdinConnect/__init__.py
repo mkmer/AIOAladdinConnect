@@ -2,7 +2,7 @@ import logging
 import json
 from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
@@ -58,6 +58,7 @@ class AladdinConnectClient:
         self._doors = {'device_id':'0' , 'status':'closed','serial':"0000000000"},{}
         self._attr_changed :dict(int,Callable) = {}
         self._first_door = None
+        self._reset_time = None
     
     def register_callback(self,update_callback:Callable,serial:str):
         self._attr_changed.update({serial:update_callback})
@@ -114,8 +115,11 @@ class AladdinConnectClient:
         """Get list of devices, i.e., Aladdin Door Controllers"""
         devices = []
         attempts = 0
-        if self._session._expire_time < datetime.now(): # Reconnect at 1/2 the expiration time
-            _LOGGER.info("Resetting websocket at 1/2 expiration time")
+        if self._reset_time is None:
+            self._reset_time  = datetime.now() + timedelta(seconds = self._session._expires_in/4) # Reset the web socket 1/4 of the expiration Time.
+        if datetime.now() > self._reset_time:
+            self._reset_time  = datetime.now() + timedelta(seconds = self._session._expires_in/4)
+            _LOGGER.info("Resetting websocket at 1/4 expiration time")
             await self._eventsocket.stop()
             await self._eventsocket.start()
 
@@ -161,6 +165,16 @@ class AladdinConnectClient:
         """Get list of devices, i.e., Aladdin Door Controllers"""
         devices = []
         attempts = 0
+
+        if self._reset_time is None:
+            self._reset_time  = datetime.now() + timedelta(seconds = self._session._expires_in/4) # Reset the web socket 1/4 of the expiration Time.
+        if datetime.now() > self._reset_time:
+            self._reset_time  = datetime.now() + timedelta(seconds = self._session._expires_in/4)
+            _LOGGER.info("Resetting websocket at 1/4 expiration time")
+            await self._eventsocket.stop()
+            await self._eventsocket.start()
+
+
         while attempts < 2: # if the key expires, log in and try this again
             try:
                 response = await self._session.get(self.DEVICE_ENDPOINT + "/" + str(device_id))
