@@ -12,7 +12,7 @@ from typing import Callable
 _LOGGER = logging.getLogger(__name__)
 
 WSURI = "wss://event-caster.st1.gdocntl.net/updates"
-#WSURI = "wss://app.apps.st1.gdocntl.net/monitor"
+#WSURI_ACK = "wss://app.apps.st1.gdocntl.net/monitor"
 
 class EventSocket:
     def __init__(self, access_token, msg_listener: Callable[[str], None]):
@@ -32,10 +32,10 @@ class EventSocket:
             "Authorization": f'Bearer {self._access_token}'}
         async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
             async with session.ws_connect(
-                WSURI,  heartbeat=20
+                WSURI #,  heartbeat=20
             ) as ws:
                 self._websocket = ws
-                _LOGGER.info("Opened the web socket")
+                _LOGGER.info(f"Opened the web socket with header {headers}")
                 while not ws.closed:
                     _LOGGER.info("waiting for message")
                     msg = await ws.receive() 
@@ -64,7 +64,7 @@ class EventSocket:
                         _LOGGER.info("Restarting Websocket due to device status message")
                         await self._msg_listener(None) # tell message listener to read the door status
                         break
-
+            
         self._websocket = None
 
         if self._running:

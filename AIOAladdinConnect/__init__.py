@@ -83,7 +83,6 @@ class AladdinConnectClient:
         return status
     
     async def close(self):
-        await self._session.close()
         if self._eventsocket:
             await self._eventsocket.stop()
         return True
