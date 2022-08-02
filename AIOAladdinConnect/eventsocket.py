@@ -57,6 +57,12 @@ class EventSocket:
                     if msg.type != aiohttp.WSMsgType.TEXT:
                         _LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
                         continue
+
+                    if not await self._msg_listener(msg.data):
+                        # The message listener received a disconnect message or other failure
+                        _LOGGER.info("Restarting Websocket due to device status message")
+                        await self._msg_listener(None) # tell message listener to read the door status
+                        break
                                 
         self._websocket = None
 
