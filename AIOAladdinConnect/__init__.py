@@ -66,17 +66,21 @@ class AladdinConnectClient:
     async def login(self):
         _LOGGER.info("Logging in")
         # if there is an error, trying to log back needs to stop the eventsocket
-        if self._eventsocket:
-            await self._eventsocket.stop()
+
         status = await self._session.login()
+        
         if status:
             _LOGGER.info("Logged in")
 
             await self.get_doors()
             _LOGGER.info("Got initial door status")
             
-            self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
-            await self._eventsocket.start()
+            if not self._eventsocket: # if first time login in....
+                self._eventsocket = EventSocket(self._session.auth_token(),self._call_back)
+                await self._eventsocket.start()
+            else:
+                await self._eventsocket.set_auth_token(self._session.auth_token()) # set the new auth token
+
             _LOGGER.info("Started Socket")
            
         return status

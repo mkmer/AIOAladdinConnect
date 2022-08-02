@@ -75,9 +75,11 @@ class SessionManager:
                 return True
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
-
+          
+        except aiohttp.ClientConnectionError as ex:
+            _LOGGER.error("Aladdin Connect - Unable to connect for login %s", ex)
+          
         return False
-
     async def close(self):
         _LOGGER.debug("Logging out & closing socket")
         if self._session:
