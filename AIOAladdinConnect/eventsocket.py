@@ -64,7 +64,7 @@ class EventSocket:
                         await self._msg_listener(None) # tell message listener to read the door status
                         break
                                 
-        self._websocket = None
+        #self._websocket = None
 
         if self._running:
             # Just keep reconnecting - The AladdinConect app just reconnects forever.
