@@ -21,7 +21,7 @@ class EventSocket:
         self._running = False
         self._websocket: aiohttp.ClientWebSocketResponse = None
         self._run_future = None
-        self._timeout = aiohttp.ClientTimeout(total=None)
+        self._timeout = aiohttp.ClientTimeout(total=None,sock_connect=60)
        
 
     async def _run(self):
@@ -32,7 +32,7 @@ class EventSocket:
             "Authorization": f'Bearer {self._access_token}'}
         async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
             async with session.ws_connect(
-                WSURI #,  heartbeat=20
+                WSURI, timeout=self._timeout #,  heartbeat=20
             ) as ws:
                 self._websocket = ws
                 _LOGGER.info(f"Opened the web socket with header {headers}")
