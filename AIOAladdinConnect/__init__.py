@@ -16,7 +16,8 @@ class AladdinConnectClient:
     DOOR_STATUS_OPENING = 'opening'
     DOOR_STATUS_CLOSING = 'closing'
     DOOR_STATUS_UNKNOWN = 'unknown'
-
+    DOOR_STATUS_TIMEOUT_CLOSE = "timeout closing"
+    DOOR_STATUS_TIMEOUT_OPEN = "timeout opening"
     DOOR_COMMAND_CLOSE = "CloseDoor"
     DOOR_COMMAND_OPEN = "OpenDoor"
 
@@ -24,10 +25,10 @@ class AladdinConnectClient:
         0: DOOR_STATUS_UNKNOWN,  # Unknown
         1: DOOR_STATUS_OPEN,  # open
         2: DOOR_STATUS_OPENING,  # opening
-        3: DOOR_STATUS_UNKNOWN,  # Timeout Opening
+        3: DOOR_STATUS_TIMEOUT_OPEN,  # Timeout Opening
         4: DOOR_STATUS_CLOSED,  # closed
         5: DOOR_STATUS_CLOSING,  # closing
-        6: DOOR_STATUS_UNKNOWN,  # Timeout Closing
+        6: DOOR_STATUS_TIMEOUT_CLOSE,  # Timeout Closing
         7: DOOR_STATUS_UNKNOWN  # Not Configured
     }
 
