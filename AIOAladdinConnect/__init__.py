@@ -16,8 +16,8 @@ class AladdinConnectClient:
     DOOR_STATUS_OPENING = 'opening'
     DOOR_STATUS_CLOSING = 'closing'
     DOOR_STATUS_UNKNOWN = 'unknown'
-    DOOR_STATUS_TIMEOUT_CLOSE = "timeout closing"
-    DOOR_STATUS_TIMEOUT_OPEN = "timeout opening"
+    DOOR_STATUS_TIMEOUT_CLOSE = "open" #If it timedout opening, it's still closed?
+    DOOR_STATUS_TIMEOUT_OPEN = "closed" # If it timedout closing, it's still open?
     DOOR_COMMAND_CLOSE = "CloseDoor"
     DOOR_COMMAND_OPEN = "OpenDoor"
 
