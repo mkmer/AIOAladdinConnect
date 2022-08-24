@@ -56,12 +56,13 @@ class AladdinConnectClient:
         self._session = SessionManager(email, password, session, client_id)
         self._eventsocket = None
         self._doors = {'device_id':'0' , 'status':'closed','serial':"0000000000"},{}
-        self._attr_changed :dict(int,Callable) = {}
+        self._attr_changed :dict(str,Callable) = {}
         self._first_door = None
         self._reset_time = None
     
-    def register_callback(self,update_callback:Callable,serial:str):
-        self._attr_changed.update({serial:update_callback})
+    def register_callback(self,update_callback:Callable,serial:str,door:int):
+        key = f"{serial}-{door}"
+        self._attr_changed.update({key:update_callback})
         _LOGGER.info("Registered callback")
  
     async def login(self):
@@ -306,9 +307,10 @@ class AladdinConnectClient:
                     door.update({'status': self.DOOR_STATUS[json_msg["door_status"]]})
                     _LOGGER.info(f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}")
                     if self._attr_changed: # There is a callback 
-                        for serial in self._attr_changed:  
-                            if json_msg['serial'] == serial: #the door is registered as a callback 
-                                await self._attr_changed[serial]() # callback the door triggered
+                        for serial in self._attr_changed:
+                            lookup = f"{json_msg['serial']}-{json_msg['door']}"
+                            if lookup == serial: #the door is registered as a callback 
+                                await self._attr_changed[lookup]() # callback the door triggered
                 else:
                     _LOGGER.info(f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}")
         return True

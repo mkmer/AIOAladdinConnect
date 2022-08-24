@@ -32,7 +32,7 @@ async def main():
     # await session.close()
     # session2 = AladdinConnectClient(username,password,mycallback)
     # await session2.set_auth_token(auth)
-    session.register_callback(mycallback,my_serial)
+    session.register_callback(mycallback,my_serial,my_door)
 
     doors = await session.get_doors()
     _LOGGER.debug(f"status< {doors}")
