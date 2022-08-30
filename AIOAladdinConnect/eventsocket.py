@@ -88,8 +88,7 @@ class EventSocket:
         _LOGGER.info("Stopping the event service")
         self._running = False
         if self._websocket is not None:
-            return
-        await self._websocket.close()
+            await self._websocket.close()
         self._websocket = None
         if self._run_future is not None:
             self._run_future.cancel()
