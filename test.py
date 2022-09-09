@@ -11,8 +11,8 @@ async def main():
         _LOGGER.debug("I've been calledback at the top")
 
     _LOGGER.debug("I've started")
-    password = "Your password"
-    username = "your username"
+    password = "Your Password"
+    username = "Your Username"
     session_x = aiohttp.ClientSession(timeout = aiohttp.ClientTimeout(total=30))
     session = AladdinConnectClient(username,password,session_x,CLIENT_ID)
     try:
@@ -38,7 +38,7 @@ async def main():
     _LOGGER.debug(f"status< {doors}")
     x = 0
     c = 0
-    while(1):
+    while(c<2):
         doors = await session.get_doors(my_serial)
         _LOGGER.debug(f"Doors< {doors}")
         if doors:
@@ -52,6 +52,7 @@ async def main():
         c = c + 1
         
     await session.close()
+    await session_x.close()
 
 
     

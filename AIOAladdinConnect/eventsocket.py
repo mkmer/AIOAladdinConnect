@@ -64,7 +64,7 @@ class EventSocket:
                         await self._msg_listener(None) # tell message listener to read the door status
                         break
                                 
-        #self._websocket = None
+        self._websocket = None
 
         if self._running:
             # Just keep reconnecting - The AladdinConect app just reconnects forever.
@@ -90,6 +90,5 @@ class EventSocket:
         if self._websocket is not None:
             await self._websocket.close()
         self._websocket = None
-        if self._run_future is not None:
-            self._run_future.cancel()
+        await self._run_future
         self._run_future = None
