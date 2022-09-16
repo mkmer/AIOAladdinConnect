@@ -29,47 +29,50 @@ class EventSocket:
             return
         _LOGGER.info("Started the web socket")
         headers = {"Authorization": f"Bearer {self._access_token}"}
-        async with aiohttp.ClientSession(
-            timeout=self._timeout, headers=headers
-        ) as session:
-            async with session.ws_connect(
-                WSURI, timeout=self._timeout  # ,  heartbeat=20
-            ) as ws:
-                self._websocket = ws
-                _LOGGER.info(f"Opened the web socket with header {headers}")
-                while not ws.closed:
-                    _LOGGER.info("waiting for message")
-                    msg = await ws.receive()
-                    if not msg:
-                        continue
-                    _LOGGER.debug(f"event message received< {msg}")
-                    if msg.type == aiohttp.WSMsgType.ERROR:
-                        _LOGGER.error("Socket message error")
-                        break
-                    if msg.type in [
-                        aiohttp.WSMsgType.CLOSE,
-                        aiohttp.WSMsgType.CLOSING,
-                        aiohttp.WSMsgType.CLOSED,
-                    ]:
-                        _LOGGER.info(
-                            f"Stopping receiving. Message type: {str(msg.type)}"
-                        )
-                        break
-                    if msg.type != aiohttp.WSMsgType.TEXT:
-                        _LOGGER.error(
-                            f"Socket message type is invalid: {str(msg.type)}"
-                        )
-                        continue
+        try:
+            async with aiohttp.ClientSession(
+                timeout=self._timeout, headers=headers
+            ) as session:
+                async with session.ws_connect(
+                    WSURI, timeout=self._timeout  # ,  heartbeat=20
+                ) as ws:
+                    self._websocket = ws
+                    _LOGGER.info(f"Opened the web socket with header {headers}")
+                    while not ws.closed:
+                        _LOGGER.info("waiting for message")
+                        msg = await ws.receive()
+                        if not msg:
+                            continue
+                        _LOGGER.debug(f"event message received< {msg}")
+                        if msg.type == aiohttp.WSMsgType.ERROR:
+                            _LOGGER.error("Socket message error")
+                            break
+                        if msg.type in [
+                            aiohttp.WSMsgType.CLOSE,
+                            aiohttp.WSMsgType.CLOSING,
+                            aiohttp.WSMsgType.CLOSED,
+                        ]:
+                            _LOGGER.info(
+                                f"Stopping receiving. Message type: {str(msg.type)}"
+                            )
+                            break
+                        if msg.type != aiohttp.WSMsgType.TEXT:
+                            _LOGGER.error(
+                                f"Socket message type is invalid: {str(msg.type)}"
+                            )
+                            continue
 
-                    if not await self._msg_listener(msg.data):
-                        # The message listener received a disconnect message or other failure
-                        _LOGGER.info(
-                            "Restarting Websocket due to device status message"
-                        )
-                        await self._msg_listener(
-                            None
-                        )  # tell message listener to read the door status
-                        break
+                        if not await self._msg_listener(msg.data):
+                            # The message listener received a disconnect message or other failure
+                            _LOGGER.info(
+                                "Restarting Websocket due to device status message"
+                            )
+                            await self._msg_listener(
+                                None
+                            )  # tell message listener to read the door status
+                            break
+            except aiohttp.ClientConnectionError
+                _LOGGER.info("Client connection timeout")
 
         self._websocket = None
 
