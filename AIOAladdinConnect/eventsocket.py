@@ -71,8 +71,8 @@ class EventSocket:
                                 None
                             )  # tell message listener to read the door status
                             break
-            except aiohttp.ClientConnectionError
-                _LOGGER.info("Client connection timeout")
+        except aiohttp.ClientConnectionError:
+            _LOGGER.info("Client connection timeout")
 
         self._websocket = None
 
