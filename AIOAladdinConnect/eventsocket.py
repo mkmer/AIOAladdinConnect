@@ -5,14 +5,15 @@ import json
 
 from typing import Callable
 
-#< WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4,"fault":0}', extra='')DEBUG:waiting for event message
+# < WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4,"fault":0}', extra='')DEBUG:waiting for event message
 # WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4}', extra='')
-#DEBUG:waiting for event message
+# DEBUG:waiting for event message
 
 _LOGGER = logging.getLogger(__name__)
 
 WSURI = "wss://event-caster.st1.gdocntl.net/updates"
-#WSURI_ACK = "wss://app.apps.st1.gdocntl.net/monitor"
+# WSURI_ACK = "wss://app.apps.st1.gdocntl.net/monitor"
+
 
 class EventSocket:
     def __init__(self, access_token, msg_listener: Callable[[str], None]):
@@ -21,24 +22,24 @@ class EventSocket:
         self._running = False
         self._websocket: aiohttp.ClientWebSocketResponse = None
         self._run_future = None
-        self._timeout = aiohttp.ClientTimeout(total=None,sock_connect=60)
-       
+        self._timeout = aiohttp.ClientTimeout(total=None, connect=60, sock_connect=60)
 
     async def _run(self):
         if not self._running:
             return
         _LOGGER.info("Started the web socket")
-        headers = {
-            "Authorization": f'Bearer {self._access_token}'}
-        async with aiohttp.ClientSession(timeout=self._timeout, headers=headers) as session:
+        headers = {"Authorization": f"Bearer {self._access_token}"}
+        async with aiohttp.ClientSession(
+            timeout=self._timeout, headers=headers
+        ) as session:
             async with session.ws_connect(
-                WSURI, timeout=self._timeout #,  heartbeat=20
+                WSURI, timeout=self._timeout  # ,  heartbeat=20
             ) as ws:
                 self._websocket = ws
                 _LOGGER.info(f"Opened the web socket with header {headers}")
                 while not ws.closed:
                     _LOGGER.info("waiting for message")
-                    msg = await ws.receive() 
+                    msg = await ws.receive()
                     if not msg:
                         continue
                     _LOGGER.debug(f"event message received< {msg}")
@@ -55,15 +56,21 @@ class EventSocket:
                         )
                         break
                     if msg.type != aiohttp.WSMsgType.TEXT:
-                        _LOGGER.error(f"Socket message type is invalid: {str(msg.type)}")
+                        _LOGGER.error(
+                            f"Socket message type is invalid: {str(msg.type)}"
+                        )
                         continue
 
                     if not await self._msg_listener(msg.data):
                         # The message listener received a disconnect message or other failure
-                        _LOGGER.info("Restarting Websocket due to device status message")
-                        await self._msg_listener(None) # tell message listener to read the door status
+                        _LOGGER.info(
+                            "Restarting Websocket due to device status message"
+                        )
+                        await self._msg_listener(
+                            None
+                        )  # tell message listener to read the door status
                         break
-                                
+
         self._websocket = None
 
         if self._running:
@@ -71,7 +78,7 @@ class EventSocket:
             _LOGGER.info("Reconnecting...")
             self._run_future = asyncio.get_event_loop().create_task(self._run())
 
-    async def set_auth_token(self,access_token):
+    async def set_auth_token(self, access_token):
         self._access_token = access_token
         await self.stop()
         await self.start()
