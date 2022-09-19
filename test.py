@@ -2,6 +2,7 @@ import aiohttp
 from AIOAladdinConnect import AladdinConnectClient
 import asyncio
 import logging
+from AIOAladdinConnect.session_manager import InvalidPasswordError
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 CLIENT_ID = 1000
@@ -26,7 +27,7 @@ async def main():
         await session_x.close()
         return
 
-    except aiohttp.ClientError as er:
+    except InvalidPasswordError as er:
         _LOGGER.debug("Bad password:  %s", er)
         await session.close()
         await session_x.close()

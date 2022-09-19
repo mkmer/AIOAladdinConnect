@@ -65,7 +65,7 @@ class SessionManager:
             )
             _LOGGER.debug(f"Received Response: {response}")
             if response.status == 401:
-                raise aiohttp.ClientError(f"Server reported bad login {response}")
+                raise InvalidPasswordError(f"Server reported bad login {response}")
 
             elif response.status != 200:
                 raise aiohttp.ClientConnectionError(f"Server reported Error {response}")
@@ -82,7 +82,7 @@ class SessionManager:
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
 
-        except aiohttp.ClientConnectionError as ex:
+        except InvalidPasswordError as ex:
             _LOGGER.error("Aladdin Connect - Unable to connect for login %s", ex)
             raise ex
 
@@ -167,3 +167,7 @@ class SessionManager:
 
 def expires_in(self):
     return self._expires_in
+
+
+class InvalidPasswordError(Exception):
+    pass
