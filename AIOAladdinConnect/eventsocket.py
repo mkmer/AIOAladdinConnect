@@ -103,5 +103,6 @@ class EventSocket:
         if self._websocket is not None:
             await self._websocket.close()
         self._websocket = None
-        await self._run_future
+        if self._run_future:
+            await self._run_future
         self._run_future = None
