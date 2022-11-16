@@ -2,6 +2,7 @@ import base64
 import logging
 from typing import Any
 import aiohttp
+import socket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -114,6 +115,9 @@ class SessionManager:
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to get doors %s : %s", ex, response)
 
+        except socket.gaierror as ex:
+            _LOGGER.error("Socket Connection error %s", ex)
+
         if response.status == 401:
             raise aiohttp.ClientConnectionError("Key has expired or not valid")
         return None
@@ -147,6 +151,9 @@ class SessionManager:
 
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to listen to doors %s", ex)
+
+        except socket.gaierror as ex:
+            _LOGGER.error("Socket Connect error %s", ex)
 
         if response.status in (401):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"

@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import logging
-import json
+import socket
 
 from typing import Callable
 
@@ -75,6 +75,7 @@ class EventSocket:
             aiohttp.ClientConnectionError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
+            socket.gaierror,
         ) as er:
             _LOGGER.debug("Web socket could not connect {er}")
         self._websocket = None
