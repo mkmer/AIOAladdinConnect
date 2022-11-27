@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 import logging
-import json
+import socket
 
 from typing import Callable
 
@@ -71,9 +71,13 @@ class EventSocket:
                                 None
                             )  # tell message listener to read the door status
                             break
-        except aiohttp.ClientConnectionError:
-            _LOGGER.info("Client connection timeout")
-
+        except (
+            aiohttp.ClientConnectionError,
+            aiohttp.ClientError,
+            asyncio.TimeoutError,
+            socket.gaierror,
+        ) as er:
+            _LOGGER.debug("Web socket could not connect {er}")
         self._websocket = None
 
         if self._running:
@@ -100,5 +104,6 @@ class EventSocket:
         if self._websocket is not None:
             await self._websocket.close()
         self._websocket = None
-        await self._run_future
+        if self._run_future:
+            await self._run_future
         self._run_future = None
