@@ -217,9 +217,8 @@ class AladdinConnectClient:
             await self._session.call_rpc(f"/devices/{device_id}/door/{door_number}/command", payload)
         except ValueError as ex:
             # Ignore "Door is already open/closed" errors to maintain backwards compatibility
-            error = str(ex.args[0])
-            should_ignore = error.endswith(
-                f'{{"code":400,"error":"Door is already {requested_door_status}"}}')
+            should_ignore = (
+                f'{{"code":400,"error":"Door is already {requested_door_status}"}}' in str(ex.args[0]))
             if not should_ignore:
                 _LOGGER.error("Aladdin Connect - Unable to set door status %s", ex)
                 return False
