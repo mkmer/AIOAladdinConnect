@@ -82,7 +82,7 @@ class SessionManager:
                 return True
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
-
+        # aiohttp.client_exceptions.ClientConnectorError - do we need to catch this?
         except InvalidPasswordError as ex:
             _LOGGER.error("Aladdin Connect - Unable to connect for login %s", ex)
             raise ex

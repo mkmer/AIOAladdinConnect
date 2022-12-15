@@ -13,6 +13,13 @@ _LOGGER = logging.getLogger(__name__)
 
 WSURI = "wss://event-caster.st1.gdocntl.net/updates"
 # WSURI_ACK = "wss://app.apps.st1.gdocntl.net/monitor"
+WS_STATUS_GOING_AWAY = 1001
+WS_STATUS_UNAUTHORIZED = 3000
+
+RECONNECT_COUNT = 3
+RECONNECT_SHORT_DELAY = 30
+RECONNECT_LONG_DELAY = 60
+GOING_AWAY_DELAY = (60 * 5) - RECONNECT_SHORT_DELAY
 
 
 class EventSocket:
@@ -23,6 +30,7 @@ class EventSocket:
         self._websocket: aiohttp.ClientWebSocketResponse = None
         self._run_future = None
         self._timeout = aiohttp.ClientTimeout(total=None, connect=60, sock_connect=60)
+        self._reconnect_tries = RECONNECT_COUNT
 
     async def _run(self):
         if not self._running:
@@ -38,6 +46,9 @@ class EventSocket:
                 ) as ws:
                     self._websocket = ws
                     _LOGGER.info(f"Opened the web socket with header {headers}")
+
+                    self._reconnect_tries = RECONNECT_COUNT
+
                     while not ws.closed:
                         _LOGGER.info("waiting for message")
                         msg = await ws.receive()
@@ -62,6 +73,10 @@ class EventSocket:
                             )
                             continue
 
+                        if msg.data in {WS_STATUS_GOING_AWAY}:
+                            _LOGGER.error(f"Server error: {str(msg.data)}")
+                            await asyncio.sleep(GOING_AWAY_DELAY)
+
                         if not await self._msg_listener(msg.data):
                             # The message listener received a disconnect message or other failure
                             _LOGGER.info(
@@ -82,6 +97,18 @@ class EventSocket:
 
         if self._running:
             # Just keep reconnecting - The AladdinConect app just reconnects forever.
+            self._reconnect_tries -= 1
+            if self._reconnect_tries < 0:
+                self._reconnect_tries = 0
+                _LOGGER.info(
+                    f"Waiting to reconnect long delay {RECONNECT_LONG_DELAY} seconds"
+                )
+                await asyncio.sleep(RECONNECT_LONG_DELAY)
+            _LOGGER.info(
+                f"Waiting to reconnect short delay {RECONNECT_SHORT_DELAY} seconds"
+            )
+            await asyncio.sleep(RECONNECT_SHORT_DELAY)
+
             _LOGGER.info("Reconnecting...")
             self._run_future = asyncio.get_event_loop().create_task(self._run())
 
