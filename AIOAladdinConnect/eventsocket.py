@@ -19,7 +19,7 @@ WS_STATUS_UNAUTHORIZED = 3000
 RECONNECT_COUNT = 3
 RECONNECT_SHORT_DELAY = 30
 RECONNECT_LONG_DELAY = 60
-GOING_AWAY_DELAY = (60 * 5) - RECONNECT_SHORT_DELAY
+# GOING_AWAY_DELAY = (60 * 5) - RECONNECT_SHORT_DELAY
 
 
 class EventSocket:
@@ -73,10 +73,6 @@ class EventSocket:
                             )
                             continue
 
-                        if msg.data in {WS_STATUS_GOING_AWAY}:
-                            _LOGGER.error(f"Server error: {str(msg.data)}")
-                            await asyncio.sleep(GOING_AWAY_DELAY)
-
                         if not await self._msg_listener(msg.data):
                             # The message listener received a disconnect message or other failure
                             _LOGGER.info(
@@ -92,7 +88,7 @@ class EventSocket:
             asyncio.TimeoutError,
             socket.gaierror,
         ) as er:
-            _LOGGER.debug("Web socket could not connect {er}")
+            _LOGGER.error("Web socket could not connect {er}")
         self._websocket = None
 
         if self._running:
