@@ -65,6 +65,9 @@ class EventSocket:
                             await ws.pong()
                             break
                         if msg.type == aiohttp.WSMsgType.CLOSE:
+                            _LOGGER.info(
+                                f"Stopping receiving. Message type: {str(msg.type)}"
+                            )
                             await ws.close()
                             break
                         if msg.type in [
