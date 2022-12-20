@@ -59,6 +59,9 @@ class EventSocket:
                             _LOGGER.error("Socket message error")
                             break
                         if msg.type == aiohttp.WSMsgType.PING:
+                            _LOGGER.info(
+                                f"Stopping receiving. Message type: {str(msg.type)}"
+                            )
                             await ws.pong()
                             break
                         if msg.type == aiohttp.WSMsgType.CLOSE:
