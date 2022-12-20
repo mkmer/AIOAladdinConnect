@@ -58,8 +58,13 @@ class EventSocket:
                         if msg.type == aiohttp.WSMsgType.ERROR:
                             _LOGGER.error("Socket message error")
                             break
+                        if msg.type == aiohttp.WSMsgType.PING:
+                            await ws.pong()
+                            break
+                        if msg.typ == aiohttp.WSMsgType.CLOSE:
+                            await ws.close()
+                            break
                         if msg.type in [
-                            aiohttp.WSMsgType.CLOSE,
                             aiohttp.WSMsgType.CLOSING,
                             aiohttp.WSMsgType.CLOSED,
                         ]:
