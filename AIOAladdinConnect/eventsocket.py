@@ -17,9 +17,7 @@ WS_STATUS_GOING_AWAY = 1001
 WS_STATUS_UNAUTHORIZED = 3000
 
 RECONNECT_COUNT = 3
-RECONNECT_SHORT_DELAY = 30
 RECONNECT_LONG_DELAY = 60
-# GOING_AWAY_DELAY = (60 * 5) - RECONNECT_SHORT_DELAY
 
 
 class EventSocket:
@@ -111,10 +109,6 @@ class EventSocket:
                     f"Waiting to reconnect long delay {RECONNECT_LONG_DELAY} seconds"
                 )
                 await asyncio.sleep(RECONNECT_LONG_DELAY)
-            _LOGGER.info(
-                f"Waiting to reconnect short delay {RECONNECT_SHORT_DELAY} seconds"
-            )
-            await asyncio.sleep(RECONNECT_SHORT_DELAY)
 
             _LOGGER.info("Reconnecting...")
             self._run_future = asyncio.get_event_loop().create_task(self._run())
