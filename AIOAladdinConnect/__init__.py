@@ -63,7 +63,15 @@ class AladdinConnectClient:
     def register_callback(self, update_callback: Callable, serial: str, door: int):
         key = f"{serial}-{door}"
         self._attr_changed.update({key: update_callback})
-        _LOGGER.info("Registered callback")
+        _LOGGER.info(f"Registered callback {key}")
+
+    def unregister_callback(self, serial: str, door: int):
+        key = f"{serial}-{door}"
+        try:
+            del self._attr_changed[key]
+            _LOGGER.info(f"Unregistered callback {key}")
+        except KeyError:
+            _LOGGER.info(f"Unregistered callback {key} Not found")
 
     async def login(self):
         _LOGGER.info("Logging in")
@@ -234,7 +242,9 @@ class AladdinConnectClient:
         except ValueError as ex:
             # Ignore "Door is already open/closed" errors to maintain backwards compatibility
             should_ignore = (
-                f'{{"code":400,"error":"Door is already {requested_door_status}"}}' in str(ex.args[0]))
+                f'{{"code":400,"error":"Door is already {requested_door_status}"}}'
+                in str(ex.args[0])
+            )
             if not should_ignore:
                 _LOGGER.error("Aladdin Connect - Unable to set door status %s", ex)
                 return False

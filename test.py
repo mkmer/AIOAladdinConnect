@@ -19,6 +19,8 @@ async def main():
     session_x = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
     session = AladdinConnectClient(username, password, session_x, CLIENT_ID)
 
+    session.unregister_callback(my_serial, my_door)
+
     try:
         await session.login()
     except aiohttp.ClientConnectionError as er:
