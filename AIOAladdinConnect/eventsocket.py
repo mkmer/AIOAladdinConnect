@@ -30,7 +30,8 @@ class EventSocket:
         self._access_token = access_token
         self._msg_listener = msg_listener
         self._running = False
-        self._websocket: aiohttp.ClientWebSocketResponse = session
+        self._session = session
+        self._websocket: aiohttp.ClientWebSocketResponse = None
         self._run_future = None
         self._timeout = aiohttp.ClientTimeout(total=None, connect=60, sock_connect=60)
         self._reconnect_tries = RECONNECT_COUNT
@@ -41,61 +42,58 @@ class EventSocket:
         _LOGGER.info("Started the web socket")
         headers = {"Authorization": f"Bearer {self._access_token}"}
         try:
-            async with aiohttp.ClientSession(
-                timeout=self._timeout, headers=headers
-            ) as session:
-                async with session.ws_connect(
-                    WSURI, timeout=self._timeout  # ,  heartbeat=20
-                ) as ws:
-                    self._websocket = ws
-                    _LOGGER.info(f"Opened the web socket with header {headers}")
+            async with self._session.ws_connect(
+                WSURI, timeout=self._timeout, headers=headers  # ,  heartbeat=20
+            ) as ws:
+                self._websocket = ws
+                _LOGGER.info(f"Opened the web socket with header {headers}")
 
-                    self._reconnect_tries = RECONNECT_COUNT
+                self._reconnect_tries = RECONNECT_COUNT
 
-                    while not ws.closed:
-                        _LOGGER.info("waiting for message")
-                        msg = await ws.receive()
-                        if not msg:
-                            continue
-                        _LOGGER.debug(f"event message received< {msg}")
-                        if msg.type == aiohttp.WSMsgType.ERROR:
-                            _LOGGER.error("Socket message error")
-                            break
-                        if msg.type == aiohttp.WSMsgType.PING:
-                            _LOGGER.info(
-                                f"Stopping receiving. Message type: {str(msg.type)}"
-                            )
-                            await ws.pong()
-                            break
-                        if msg.type == aiohttp.WSMsgType.CLOSE:
-                            _LOGGER.info(
-                                f"Stopping receiving. Message type: {str(msg.type)}"
-                            )
-                            await ws.close()
-                            break
-                        if msg.type in [
-                            aiohttp.WSMsgType.CLOSING,
-                            aiohttp.WSMsgType.CLOSED,
-                        ]:
-                            _LOGGER.info(
-                                f"Stopping receiving. Message type: {str(msg.type)}"
-                            )
-                            break
-                        if msg.type != aiohttp.WSMsgType.TEXT:
-                            _LOGGER.error(
-                                f"Socket message type is invalid: {str(msg.type)}"
-                            )
-                            continue
+                while not ws.closed:
+                    _LOGGER.info("waiting for message")
+                    msg = await ws.receive()
+                    if not msg:
+                        continue
+                    _LOGGER.debug(f"event message received< {msg}")
+                    if msg.type == aiohttp.WSMsgType.ERROR:
+                        _LOGGER.error("Socket message error")
+                        break
+                    if msg.type == aiohttp.WSMsgType.PING:
+                        _LOGGER.info(
+                            f"Stopping receiving. Message type: {str(msg.type)}"
+                        )
+                        await ws.pong()
+                        break
+                    if msg.type == aiohttp.WSMsgType.CLOSE:
+                        _LOGGER.info(
+                            f"Stopping receiving. Message type: {str(msg.type)}"
+                        )
+                        await ws.close()
+                        break
+                    if msg.type in [
+                        aiohttp.WSMsgType.CLOSING,
+                        aiohttp.WSMsgType.CLOSED,
+                    ]:
+                        _LOGGER.info(
+                            f"Stopping receiving. Message type: {str(msg.type)}"
+                        )
+                        break
+                    if msg.type != aiohttp.WSMsgType.TEXT:
+                        _LOGGER.error(
+                            f"Socket message type is invalid: {str(msg.type)}"
+                        )
+                        continue
 
-                        if not await self._msg_listener(msg.data):
-                            # The message listener received a disconnect message or other failure
-                            _LOGGER.info(
-                                "Restarting Websocket due to device status message"
-                            )
-                            await self._msg_listener(
-                                None
-                            )  # tell message listener to read the door status
-                            break
+                    if not await self._msg_listener(msg.data):
+                        # The message listener received a disconnect message or other failure
+                        _LOGGER.info(
+                            "Restarting Websocket due to device status message"
+                        )
+                        await self._msg_listener(
+                            None
+                        )  # tell message listener to read the door status
+                        break
         except (
             aiohttp.ClientError,
             asyncio.TimeoutError,
