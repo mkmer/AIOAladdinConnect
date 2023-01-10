@@ -97,12 +97,11 @@ class EventSocket:
                             )  # tell message listener to read the door status
                             break
         except (
-            aiohttp.ClientConnectionError,
             aiohttp.ClientError,
             asyncio.TimeoutError,
             socket.gaierror,
         ) as er:
-            _LOGGER.error("Web socket could not connect {er}")
+            _LOGGER.error(f"Web socket could not connect {er}")
         self._websocket = None
 
         if self._running:

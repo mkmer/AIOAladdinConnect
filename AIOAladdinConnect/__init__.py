@@ -165,7 +165,7 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientConnectionError) as ccer:
+            except (aiohttp.ClientError, ConnectionError) as ccer:
                 _LOGGER.info("Client connection: %s", ccer)
                 await self.login()
                 attempts += 1
@@ -210,7 +210,7 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientConnectionError) as ccer:
+            except (aiohttp.ClientError, ConnectionError) as ccer:
                 _LOGGER.error("%s", ccer)
                 await self.login()
                 attempts += 1

@@ -69,7 +69,7 @@ class SessionManager:
                 raise InvalidPasswordError(f"Server reported bad login {response}")
 
             elif response.status != 200:
-                raise aiohttp.ClientConnectionError(f"Server reported Error {response}")
+                raise ConnectionError(f"Server reported Error {response}")
             if response.content_type == "application/json":
                 response_json = await response.json()
                 _LOGGER.debug(f"JSON Response {response_json}")
@@ -96,7 +96,7 @@ class SessionManager:
             url = self.API_BASE_URL + self.LOGOUT_ENDPOINT
             response = await self._session.post(url, headers=self._headers)
             if response.status != 200:
-                raise aiohttp.ClientConnectionError(f"Server reported Error {response}")
+                raise ConnectionError(f"Server reported Error {response}")
             await self._session.close()
 
     async def get(self, endpoint: str):
@@ -119,7 +119,7 @@ class SessionManager:
             _LOGGER.error("Socket Connection error %s", ex)
 
         if response.status == 401:
-            raise aiohttp.ClientConnectionError("Key has expired or not valid")
+            raise ConnectionError("Key has expired or not valid")
         return None
 
     async def call_rpc(self, api, payload=None):
@@ -157,7 +157,7 @@ class SessionManager:
 
         if response.status in (401):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"
-            raise aiohttp.ClientConnectionError(msg)
+            raise ConnectionError(msg)
 
         if response.status not in (200, 204):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"
@@ -177,4 +177,8 @@ def expires_in(self):
 
 
 class InvalidPasswordError(Exception):
+    pass
+
+
+class ConnectionError(Exception):
     pass
