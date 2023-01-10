@@ -53,6 +53,7 @@ class AladdinConnectClient:
     CONTROLLER_STATUS = {0: "Offline", 1: STATUS_CONNECTED}
 
     def __init__(self, email: str, password: str, session, client_id: str):
+        self._session_id = session
         self._session = SessionManager(email, password, session, client_id)
         self._eventsocket = None
         self._doors = {"device_id": "0", "status": "closed", "serial": "0000000000"}, {}
@@ -87,7 +88,7 @@ class AladdinConnectClient:
 
             if not self._eventsocket:  # if first time login in....
                 self._eventsocket = EventSocket(
-                    self._session.auth_token(), self._call_back
+                    self._session.auth_token(), self._call_back, self._session_id
                 )
                 await self._eventsocket.start()
             else:
@@ -360,7 +361,9 @@ class AladdinConnectClient:
     async def set_auth_token(self, auth_token):
         self._session.set_auth_token(auth_token)
         if self._eventsocket is None:
-            self._eventsocket = EventSocket(self._session.auth_token(), self._call_back)
+            self._eventsocket = EventSocket(
+                self._session.auth_token(), self._call_back, self._session_id
+            )
         if self._eventsocket:
             await self._eventsocket.set_auth_token(auth_token)
 

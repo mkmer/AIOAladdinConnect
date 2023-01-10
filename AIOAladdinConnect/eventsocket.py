@@ -21,11 +21,16 @@ RECONNECT_LONG_DELAY = 60
 
 
 class EventSocket:
-    def __init__(self, access_token, msg_listener: Callable[[str], None]):
+    def __init__(
+        self,
+        access_token,
+        msg_listener: Callable[[str], None],
+        session: aiohttp.ClientSession,
+    ):
         self._access_token = access_token
         self._msg_listener = msg_listener
         self._running = False
-        self._websocket: aiohttp.ClientWebSocketResponse = None
+        self._websocket: aiohttp.ClientWebSocketResponse = session
         self._run_future = None
         self._timeout = aiohttp.ClientTimeout(total=None, connect=60, sock_connect=60)
         self._reconnect_tries = RECONNECT_COUNT
