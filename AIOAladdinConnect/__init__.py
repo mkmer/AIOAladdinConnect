@@ -4,7 +4,7 @@ from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
 
 import aiohttp
-from AIOAladdinConnect.session_manager import SessionManager
+from AIOAladdinConnect.session_manager import SessionManager, ConnectionError
 from AIOAladdinConnect.eventsocket import EventSocket
 
 _LOGGER = logging.getLogger(__name__)
