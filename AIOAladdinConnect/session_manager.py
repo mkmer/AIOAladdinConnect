@@ -118,7 +118,7 @@ class SessionManager:
         except socket.gaierror as ex:
             _LOGGER.error("Socket Connection error %s", ex)
 
-        if response.status == 401:
+        if response.status != 200:
             raise ConnectionError("Key has expired or not valid")
         return None
 
