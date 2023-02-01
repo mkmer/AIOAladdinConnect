@@ -135,5 +135,8 @@ class EventSocket:
             await self._websocket.close()
         self._websocket = None
         if self._run_future:
-            await self._run_future
+            try:
+                await asyncio.wait_for(self._run_future, timeout=None)
+            except TypeError:
+                pass
         self._run_future = None
