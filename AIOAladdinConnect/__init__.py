@@ -311,7 +311,7 @@ class AladdinConnectClient:
             _LOGGER.info("Got reset message")
             await self.get_doors()
             for serial in self._attr_changed:
-                await self._attr_changed[
+                self._attr_changed[
                     serial
                 ]()  # Notify all doors that there has been an update
             return False
@@ -346,7 +346,7 @@ class AladdinConnectClient:
                         for serial in self._attr_changed:
                             lookup = f"{json_msg['serial']}-{json_msg['door']}"
                             if lookup == serial:  # the door is registered as a callback
-                                await self._attr_changed[
+                                self._attr_changed[
                                     lookup
                                 ]()  # callback the door triggered
                 else:
