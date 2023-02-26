@@ -4,13 +4,16 @@ from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
 
 import aiohttp
-from AIOAladdinConnect.session_manager import SessionManager, ConnectionError
+from AIOAladdinConnect.session_manager import SessionManager
+from AIOAladdinConnect import session_manager
 from AIOAladdinConnect.eventsocket import EventSocket
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class AladdinConnectClient:
+    """Aladdin Connect Client Class"""
+
     CONFIGURATION_ENDPOINT = "/configuration"
     DEVICE_ENDPOINT = "/devices"
 
@@ -19,8 +22,8 @@ class AladdinConnectClient:
     DOOR_STATUS_OPENING = "opening"
     DOOR_STATUS_CLOSING = "closing"
     DOOR_STATUS_UNKNOWN = "unknown"
-    DOOR_STATUS_TIMEOUT_CLOSE = "open"  # If it timedout opening, it's still closed?
-    DOOR_STATUS_TIMEOUT_OPEN = "closed"  # If it timedout closing, it's still open?
+    DOOR_STATUS_TIMEOUT_CLOSE = "open"  # If it timed out opening, it's still closed?
+    DOOR_STATUS_TIMEOUT_OPEN = "closed"  # If it timed out closing, it's still open?
     DOOR_COMMAND_CLOSE = "CloseDoor"
     DOOR_COMMAND_OPEN = "OpenDoor"
 
@@ -62,19 +65,23 @@ class AladdinConnectClient:
         self._reset_time = None
 
     def register_callback(self, update_callback: Callable, serial: str, door: int):
+        """Register a callback function for events"""
         key = f"{serial}-{door}"
         self._attr_changed.update({key: update_callback})
-        _LOGGER.info(f"Registered callback {key}")
+        _LOGGER.info("Registered callback %s", key)
 
     def unregister_callback(self, serial: str, door: int):
+        """Remove a registered callback from events"""
         key = f"{serial}-{door}"
-        try:
-            del self._attr_changed[key]
-            _LOGGER.info(f"Unregistered callback {key}")
-        except KeyError:
-            _LOGGER.info(f"Unregistered callback {key} Not found")
+        if self._attr_changed:
+            try:
+                del self._attr_changed[key]
+                _LOGGER.info("Unregistered callback %s", key)
+            except KeyError:
+                _LOGGER.error("Unregistered callback %s Not found", key)
 
     async def login(self):
+        """Login to AladdinConnect Service and get initial door status"""
         _LOGGER.info("Logging in")
         # if there is an error, trying to log back needs to stop the eventsocket
 
@@ -101,13 +108,14 @@ class AladdinConnectClient:
         return status
 
     async def close(self):
+        """Close the connection and stop the event socket."""
         if self._eventsocket:
             await self._eventsocket.stop()
         return True
 
     async def get_doors(self, serial: str = None):
-        """Get all doors status and store values
-        This function should be called intermittently to update all door information"""
+        """Get all doors status and store values.
+        This function should be called intermittently to update all door information."""
         if serial and self._first_door is None:
             self._first_door = serial  # only update on the first door registered.
 
@@ -129,7 +137,7 @@ class AladdinConnectClient:
         return self._doors
 
     async def _get_devices(self):
-        """Get list of devices, i.e., Aladdin Door Controllers"""
+        """Get list of devices, i.e., Aladdin Door Controllers."""
         devices = []
         attempts = 0
 
@@ -165,8 +173,8 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientError, ConnectionError) as ccer:
-                _LOGGER.info("Client connection: %s", ccer)
+            except (aiohttp.ClientError, session_manager.ConnectionError) as ex:
+                _LOGGER.info("Client connection: %s", ex)
                 await self.login()
                 attempts += 1
         return None
@@ -181,7 +189,7 @@ class AladdinConnectClient:
                 response = await self._session.get(
                     self.DEVICE_ENDPOINT + "/" + str(device_id)
                 )
-                _LOGGER.debug(f"Device only: {response}")
+                _LOGGER.debug("Device only: %s", response)
 
                 doors = []
                 for door in response["doors"]:
@@ -210,20 +218,20 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientError, ConnectionError) as ccer:
-                _LOGGER.error("%s", ccer)
+            except (aiohttp.ClientError, session_manager.ConnectionError) as ex:
+                _LOGGER.error("%s", ex)
                 await self.login()
                 attempts += 1
         return None
 
     async def close_door(self, device_id: int, door_number: int):
-        """Command to close the door"""
+        """Command to close the door."""
         return await self._set_door_status(
             device_id, door_number, self.DOOR_STATUS_CLOSED
         )
 
     async def open_door(self, device_id: int, door_number: int):
-        """Command to open the door"""
+        """Command to open the door."""
         return await self._set_door_status(
             device_id, door_number, self.DOOR_STATUS_OPEN
         )
@@ -231,7 +239,7 @@ class AladdinConnectClient:
     async def _set_door_status(
         self, device_id: int, door_number: int, requested_door_status: DOOR_STATUS
     ):
-        """Set door state"""
+        """Set door state."""
         payload = {
             "command_key": self.REQUEST_DOOR_STATUS_COMMAND[requested_door_status]
         }
@@ -253,57 +261,67 @@ class AladdinConnectClient:
         return True
 
     async def async_get_door_status(self, device_id: int, door_number: int):
+        """Async call to get the door status."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
 
     def get_door_status(self, device_id, door_number):
+        """Get the door status."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
 
     async def async_get_door_link_status(self, device_id, door_number):
+        """Async call to get the door link status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["link_status"]
 
     def get_door_link_status(self, device_id, door_number):
+        """Get the door link status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["link_status"]
 
     async def async_get_battery_status(self, device_id, door_number):
+        """Async call to get battery status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["battery_level"]
 
     def get_battery_status(self, device_id, door_number):
+        """Get battery status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["battery_level"]
 
     async def async_get_rssi_status(self, device_id, door_number):
+        """Async call to get rssi status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
 
     def get_rssi_status(self, device_id, door_number):
+        """Get rssi status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
 
     async def async_get_ble_strength(self, device_id, door_number):
+        """Async call to get BLE signal strength for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["ble_strength"]
 
     def get_ble_strength(self, device_id, door_number):
+        """Get BLE signal strength for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["ble_strength"]
 
     async def _call_back(self, msg) -> bool:
-        """Call back from AIO HTTP web socket with door status information"""
+        """Call back from AIO HTTP web socket with door status information."""
         # Opening and Closing only are sent if the WEB API called the open/close event
         # pressing the local button only results in a state change of open or close.
 
@@ -316,7 +334,7 @@ class AladdinConnectClient:
                 ]()  # Notify all doors that there has been an update
             return False
 
-        _LOGGER.info(f"Got the callback {json.loads(msg)}")
+        _LOGGER.info("Got the callback %s", json.loads(msg))
         json_msg = json.loads(msg)
 
         for door in self._doors:
@@ -327,7 +345,8 @@ class AladdinConnectClient:
                     and json_msg["device_status"] == 0
                 ):
                     _LOGGER.info(
-                        f"Reconnecting because we Received socket disconnect message {json_msg}"
+                        "Reconnecting because we Received socket disconnect message %s",
+                        json_msg,
                     )
                     return False
 
@@ -340,7 +359,7 @@ class AladdinConnectClient:
                 ):
                     door.update({"status": self.DOOR_STATUS[json_msg["door_status"]]})
                     _LOGGER.info(
-                        f"Status Updated {self.DOOR_STATUS[json_msg['door_status']]}"
+                        "Status Updated %s", self.DOOR_STATUS[json_msg["door_status"]]
                     )
                     if self._attr_changed:  # There is a callback
                         for serial in self._attr_changed:
@@ -351,14 +370,17 @@ class AladdinConnectClient:
                                 ]()  # callback the door triggered
                 else:
                     _LOGGER.info(
-                        f"Status NOT updated {self.DOOR_STATUS[json_msg['door_status']]}"
+                        "Status NOT updated %s ",
+                        self.DOOR_STATUS[json_msg["door_status"]],
                     )
         return True
 
     def auth_token(self):
+        """Current auth token."""
         return self._session.auth_token()
 
     async def set_auth_token(self, auth_token):
+        """Set new auth token."""
         self._session.set_auth_token(auth_token)
         if self._eventsocket is None:
             self._eventsocket = EventSocket(

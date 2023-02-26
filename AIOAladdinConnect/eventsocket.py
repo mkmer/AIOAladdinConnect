@@ -21,6 +21,8 @@ RECONNECT_LONG_DELAY = 60
 
 
 class EventSocket:
+    """Aladdin Connect eventsocket class."""
+
     def __init__(
         self,
         access_token,
@@ -37,6 +39,7 @@ class EventSocket:
         self._reconnect_tries = RECONNECT_COUNT
 
     async def _run(self):
+        """Run the event socket."""
         if not self._running:
             return
         _LOGGER.info("Started the web socket")
@@ -46,7 +49,7 @@ class EventSocket:
                 WSURI, timeout=self._timeout, headers=headers  # ,  heartbeat=20
             ) as ws:
                 self._websocket = ws
-                _LOGGER.info(f"Opened the web socket with header {headers}")
+                _LOGGER.info("Opened the web socket with header %s", headers)
 
                 self._reconnect_tries = RECONNECT_COUNT
 
@@ -55,19 +58,19 @@ class EventSocket:
                     msg = await ws.receive()
                     if not msg:
                         continue
-                    _LOGGER.debug(f"event message received< {msg}")
+                    _LOGGER.debug("event message received< %s", msg)
                     if msg.type == aiohttp.WSMsgType.ERROR:
                         _LOGGER.error("Socket message error")
                         break
                     if msg.type == aiohttp.WSMsgType.PING:
                         _LOGGER.info(
-                            f"Stopping receiving. Message type: {str(msg.type)}"
+                            "Stopping receiving. Message type: %s", str(msg.type)
                         )
                         await ws.pong()
                         break
                     if msg.type == aiohttp.WSMsgType.CLOSE:
                         _LOGGER.info(
-                            f"Stopping receiving. Message type: {str(msg.type)}"
+                            "Stopping receiving. Message type: %s", str(msg.type)
                         )
                         await ws.close()
                         break
@@ -76,12 +79,12 @@ class EventSocket:
                         aiohttp.WSMsgType.CLOSED,
                     ]:
                         _LOGGER.info(
-                            f"Stopping receiving. Message type: {str(msg.type)}"
+                            "Stopping receiving. Message type: %s", str(msg.type)
                         )
                         break
                     if msg.type != aiohttp.WSMsgType.TEXT:
                         _LOGGER.error(
-                            f"Socket message type is invalid: {str(msg.type)}"
+                            "Socket message type is invalid: %s", str(msg.type)
                         )
                         continue
 
@@ -98,8 +101,8 @@ class EventSocket:
             aiohttp.ClientError,
             asyncio.TimeoutError,
             socket.gaierror,
-        ) as er:
-            _LOGGER.error(f"Web socket could not connect {er}")
+        ) as ex:
+            _LOGGER.error("Web socket could not connect %s", ex)
         self._websocket = None
 
         if self._running:
@@ -108,7 +111,7 @@ class EventSocket:
             if self._reconnect_tries < 0:
                 self._reconnect_tries = 0
                 _LOGGER.info(
-                    f"Waiting to reconnect long delay {RECONNECT_LONG_DELAY} seconds"
+                    "Waiting to reconnect long delay %s seconds", RECONNECT_LONG_DELAY
                 )
                 await asyncio.sleep(RECONNECT_LONG_DELAY)
 
@@ -116,11 +119,13 @@ class EventSocket:
             self._run_future = asyncio.get_event_loop().create_task(self._run())
 
     async def set_auth_token(self, access_token):
+        """Set new auth token and reset socket."""
         self._access_token = access_token
         await self.stop()
         await self.start()
 
     async def start(self):
+        """Start the event socket."""
         if self._running is False:
             _LOGGER.info("Starting the event service")
             self._running = True
@@ -129,6 +134,7 @@ class EventSocket:
             _LOGGER.info("Trying to start an already running event service")
 
     async def stop(self):
+        """Stop the event socket."""
         _LOGGER.info("Stopping the event service")
         self._running = False
         if self._websocket is not None:

@@ -1,8 +1,8 @@
 import base64
 import logging
-from typing import Any
-import aiohttp
 import socket
+import aiohttp
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,13 +33,16 @@ class SessionManager:
         self._expires_in = None
 
     def auth_token(self):
+        """Retrieve current auth token."""
         return self._auth_token
 
     def set_auth_token(self, auth_token):
+        """Set auth token after logging in."""
         self._auth_token = auth_token
         self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
 
     async def login(self) -> bool:
+        """Login to Aladdin Connect service."""
         self._auth_token = None
         self._logged_in = False
         password_base64 = base64.b64encode(self._password.encode("utf-8")).decode(
@@ -59,12 +62,12 @@ class SessionManager:
         }
 
         url = self.API_BASE_URL + self.LOGIN_ENDPOINT
-        _LOGGER.debug(f"Sending payload: {payload}")
+        _LOGGER.debug("Sending payload: %s", payload)
         try:
             response = await self._session.post(
                 url, data=payload, headers=self._headers
             )
-            _LOGGER.debug(f"Received Response: {response}")
+            _LOGGER.debug("Received Response: %s", response)
             if response.status == 401:
                 raise InvalidPasswordError(f"Server reported bad login {response}")
 
@@ -72,7 +75,7 @@ class SessionManager:
                 raise ConnectionError(f"Server reported Error {response}")
             if response.content_type == "application/json":
                 response_json = await response.json()
-                _LOGGER.debug(f"JSON Response {response_json}")
+                _LOGGER.debug("JSON Response %s", response_json)
 
             if response_json and "access_token" in response_json:
                 self._logged_in = True
@@ -90,16 +93,18 @@ class SessionManager:
         return False
 
     async def close(self):
+        """Close socket."""
         _LOGGER.debug("Logging out & closing socket")
         if self._session:
             self._headers.update({"Content-Type": "application/json"})
             url = self.API_BASE_URL + self.LOGOUT_ENDPOINT
             response = await self._session.post(url, headers=self._headers)
             if response.status != 200:
-                raise ConnectionError(f"Server reported Error {response}")
+                raise ConnectionError("Server reported Error %s" % response)
             await self._session.close()
 
     async def get(self, endpoint: str):
+        """Get door status."""
         url = self.API_BASE_URL + endpoint
         self._headers.update({"Content-Type": "application/x-www-form-urlencoded"})
 
@@ -107,7 +112,7 @@ class SessionManager:
             _LOGGER.info("Updating door status")
             response = await self._session.get(url, headers=self._headers)
             if response:
-                _LOGGER.debug(f"Get message: {await response.text()}")
+                _LOGGER.debug("Get message: %s", await response.text())
 
             if response.content_type == "application/json":
                 return await response.json()
@@ -123,6 +128,7 @@ class SessionManager:
         return None
 
     async def call_rpc(self, api, payload=None):
+        """Send and RPC message."""
         self._headers.update({"Content-Type": "application/json"})
         url = self.API_BASE_URL + api
         try:
@@ -144,6 +150,7 @@ class SessionManager:
         return None
 
     async def call_status(self, api, payload=None):
+        """Update the door status."""
         self._headers.update({"Content-Type": "application/json"})
         url = self.API_BASE_URL + api
         try:
@@ -172,13 +179,9 @@ class SessionManager:
         raise ValueError(msg)
 
 
-def expires_in(self):
-    return self._expires_in
-
-
 class InvalidPasswordError(Exception):
-    pass
+    """Aladdin Password Error."""
 
 
 class ConnectionError(Exception):
-    pass
+    """Aladdin Connection error."""
