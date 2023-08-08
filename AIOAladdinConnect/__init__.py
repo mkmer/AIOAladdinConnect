@@ -132,6 +132,7 @@ class AladdinConnectClient:
                     # The socket has failed to keep us up to date...
                     await self._eventsocket.stop()
                     await self._eventsocket.start()
+                    break
         self._doors = doors
 
         return self._doors
