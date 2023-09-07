@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="AIOAladdinConnect",
-    version="0.1.57",
+    version="0.1.58",
     author="Mike Kasper",
     author_email="m_kasper@sbcglobal.net",
     url="http://github.com/mkmer/AIOAladdinConnect",
