@@ -19,8 +19,6 @@ async def main():
     session_x = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30))
     session = AladdinConnectClient(username, password, session_x, CLIENT_ID)
 
-    session.unregister_callback(my_serial, my_door)
-
     try:
         await session.login()
     except aiohttp.ClientConnectionError as er:
@@ -66,6 +64,8 @@ async def main():
             # await session._call_back("""{"serial":"F0AD4E03A9FE","device_status":"0"}""")
         c = c + 1
 
+    _LOGGER.debug(f"Raw Door< {session.doors}")
+    
     await session.close()
     await session_x.close()
 
