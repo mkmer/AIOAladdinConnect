@@ -1,3 +1,6 @@
+"""Aladdin Connect API.""" 
+from __future__ import annotations
+
 import logging
 import json
 from sre_constants import SRE_FLAG_DOTALL
@@ -112,7 +115,7 @@ class AladdinConnectClient:
         if self._eventsocket:
             await self._eventsocket.stop()
         return True
-
+        
     async def get_doors(self, serial: str = None):
         """Get all doors status and store values.
         This function should be called intermittently to update all door information."""
@@ -225,6 +228,11 @@ class AladdinConnectClient:
                 attempts += 1
         return None
 
+    @property
+    def doors(self):
+        """Return raw stored doors."""
+        return self._doors
+        
     async def close_door(self, device_id: int, door_number: int):
         """Command to close the door."""
         return await self._set_door_status(
