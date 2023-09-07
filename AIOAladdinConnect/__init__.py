@@ -1,9 +1,8 @@
-"""Aladdin Connect API.""" 
+"""Aladdin Connect API."""
 from __future__ import annotations
 
 import logging
 import json
-from sre_constants import SRE_FLAG_DOTALL
 from typing import Callable
 
 import aiohttp
@@ -115,7 +114,7 @@ class AladdinConnectClient:
         if self._eventsocket:
             await self._eventsocket.stop()
         return True
-        
+
     async def get_doors(self, serial: str = None):
         """Get all doors status and store values.
         This function should be called intermittently to update all door information."""
@@ -171,7 +170,7 @@ class AladdinConnectClient:
                         )
                     devices.append({"device_id": device["id"], "doors": doors})
                 return devices
-            except (KeyError) as ex:
+            except KeyError as ex:
                 _LOGGER.error(
                     "Aladdin Connect - Unable to retrieve configuration %s", ex
                 )
@@ -216,7 +215,7 @@ class AladdinConnectClient:
                     )
                 devices.append({"device_id": device_id, "doors": doors})
                 return devices
-            except (KeyError) as ex:
+            except KeyError as ex:
                 _LOGGER.error(
                     "Aladdin Connect - Unable to retrieve configuration %s", ex
                 )
@@ -232,7 +231,7 @@ class AladdinConnectClient:
     def doors(self):
         """Return raw stored doors."""
         return self._doors
-        
+
     async def close_door(self, device_id: int, door_number: int):
         """Command to close the door."""
         return await self._set_door_status(
@@ -280,54 +279,63 @@ class AladdinConnectClient:
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["status"]
+        return None
 
     async def async_get_door_link_status(self, device_id, door_number):
         """Async call to get the door link status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["link_status"]
+        return None
 
     def get_door_link_status(self, device_id, door_number):
         """Get the door link status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["link_status"]
+        return None
 
     async def async_get_battery_status(self, device_id, door_number):
         """Async call to get battery status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["battery_level"]
+        return None
 
     def get_battery_status(self, device_id, door_number):
         """Get battery status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["battery_level"]
+        return None
 
     async def async_get_rssi_status(self, device_id, door_number):
         """Async call to get rssi status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
+        return None
 
     def get_rssi_status(self, device_id, door_number):
         """Get rssi status for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["rssi"]
+        return None
 
     async def async_get_ble_strength(self, device_id, door_number):
         """Async call to get BLE signal strength for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["ble_strength"]
+        return None
 
     def get_ble_strength(self, device_id, door_number):
         """Get BLE signal strength for door."""
         for door in self._doors:
             if door["device_id"] == device_id and door["door_number"] == door_number:
                 return door["ble_strength"]
+        return None
 
     async def _call_back(self, msg) -> bool:
         """Call back from AIO HTTP web socket with door status information."""
@@ -337,10 +345,8 @@ class AladdinConnectClient:
         if msg is None:  # the socket was closed - update via polling
             _LOGGER.info("Got reset message")
             await self.get_doors()
-            for serial in self._attr_changed:
-                self._attr_changed[
-                    serial
-                ]()  # Notify all doors that there has been an update
+            for _,callback in self._attr_changed.items():
+                callback()  # Notify all doors that there has been an update
             return False
 
         _LOGGER.info("Got the callback %s", json.loads(msg))

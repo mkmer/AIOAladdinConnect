@@ -1,7 +1,9 @@
-import aiohttp
-from AIOAladdinConnect import AladdinConnectClient
+"""Test API functionality."""
 import asyncio
 import logging
+import aiohttp
+
+from AIOAladdinConnect import AladdinConnectClient
 from AIOAladdinConnect.session_manager import InvalidPasswordError
 
 logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
@@ -10,6 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def main():
+    """Main function for testing."""
     async def mycallback():
         _LOGGER.debug("I've been calledback at the top")
 
@@ -21,19 +24,20 @@ async def main():
 
     try:
         await session.login()
-    except aiohttp.ClientConnectionError as er:
-        _LOGGER.debug("I can not connect:  %s", er)
+        
+    except aiohttp.ClientConnectionError as ex:
+        _LOGGER.debug("I can not connect:  %s", ex)
         await session.close()
         await session_x.close()
         return
 
-    except InvalidPasswordError as er:
-        _LOGGER.debug("Bad password:  %s", er)
+    except InvalidPasswordError as ex:
+        _LOGGER.debug("Bad password:  %s", ex)
         await session.close()
         await session_x.close()
         return
 
-    auth = session.auth_token()
+    session.auth_token()
     doors = await session.get_doors()
     if doors:
         my_door = doors[0]["door_number"]
@@ -65,7 +69,7 @@ async def main():
         c = c + 1
 
     _LOGGER.debug(f"Raw Door< {session.doors}")
-    
+
     await session.close()
     await session_x.close()
 

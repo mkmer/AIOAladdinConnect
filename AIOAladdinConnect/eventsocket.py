@@ -1,9 +1,9 @@
-import aiohttp
+"""Aladdin Connect Eventsocket Handeler."""
 import asyncio
 import logging
 import socket
-
 from typing import Callable
+import aiohttp
 
 # < WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4,"fault":0}', extra='')DEBUG:waiting for event message
 # WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4}', extra='')
@@ -46,15 +46,15 @@ class EventSocket:
             try:
                 async with self._session.ws_connect(
                     WSURI, timeout=self._timeout, headers=headers  # ,  heartbeat=20
-                ) as ws:
-                    self._websocket = ws
+                ) as websocket:
+                    self._websocket = websocket
                     _LOGGER.info("Opened the web socket with header %s", headers)
 
                     self._reconnect_tries = RECONNECT_COUNT
 
-                    while not ws.closed:
+                    while not websocket.closed:
                         _LOGGER.info("waiting for message")
-                        msg = await ws.receive()
+                        msg = await websocket.receive()
                         if not msg:
                             continue
                         _LOGGER.debug("event message received< %s", msg)
@@ -65,13 +65,13 @@ class EventSocket:
                             _LOGGER.info(
                                 "Stopping receiving. Message type: %s", str(msg.type)
                             )
-                            await ws.pong()
+                            await websocket.pong()
                             break
                         if msg.type == aiohttp.WSMsgType.CLOSE:
                             _LOGGER.info(
                                 "Stopping receiving. Message type: %s", str(msg.type)
                             )
-                            await ws.close()
+                            await websocket.close()
                             break
                         if msg.type in [
                             aiohttp.WSMsgType.CLOSING,

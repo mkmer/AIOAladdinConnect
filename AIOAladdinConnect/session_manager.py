@@ -1,3 +1,4 @@
+"""Aladdin Connect Session Manager."""
 import base64
 import logging
 import socket
@@ -8,6 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class SessionManager:
+    """A session Manager for Aladdin Connect."""
     HEADER_CONTENT_TYPE_URLENCODED = "application/x-www-form-urlencoded"
     API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
     # API_BASE_URL = "https://16375mc41i.execute-api.us-east-1.amazonaws.com/IOS"
@@ -71,7 +73,7 @@ class SessionManager:
             if response.status == 401:
                 raise InvalidPasswordError(f"Server reported bad login {response}")
 
-            elif response.status != 200:
+            if response.status != 200:
                 raise ConnectionError(f"Server reported Error {response}")
             if response.content_type == "application/json":
                 response_json = await response.json()
@@ -100,7 +102,7 @@ class SessionManager:
             url = self.API_BASE_URL + self.LOGOUT_ENDPOINT
             response = await self._session.post(url, headers=self._headers)
             if response.status != 200:
-                raise ConnectionError("Server reported Error %s" % response)
+                raise ConnectionError(f"Server reported Error {response}")
             await self._session.close()
 
     async def get(self, endpoint: str):
@@ -132,7 +134,7 @@ class SessionManager:
         self._headers.update({"Content-Type": "application/json"})
         url = self.API_BASE_URL + api
         try:
-            _LOGGER.info(f"Sending message: {payload}")
+            _LOGGER.info("Sending message: %s", payload)
             response = await self._session.post(
                 url, json=payload, headers=self._headers
             )
@@ -149,7 +151,7 @@ class SessionManager:
 
         return None
 
-    async def call_status(self, api, payload=None):
+    async def call_status(self, api):
         """Update the door status."""
         self._headers.update({"Content-Type": "application/json"})
         url = self.API_BASE_URL + api
@@ -162,7 +164,7 @@ class SessionManager:
         except socket.gaierror as ex:
             _LOGGER.error("Socket Connect error %s", ex)
 
-        if response.status in (401):
+        if response.status in (401, 403):
             msg = f"Aladdin API call ({url}) failed: {response.status}, {await response.text()}"
             raise ConnectionError(msg)
 
