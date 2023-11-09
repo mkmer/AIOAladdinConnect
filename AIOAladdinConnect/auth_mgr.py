@@ -7,7 +7,7 @@ class AladdinAuthMgr(metaclass=abc.ABCMeta):
     """Aladdin Connect API Authentication Manager."""
 
     def __init__(self, session: ClientSession) -> None:
-        """YoLink Auth Manager"""
+        """Aladdin Connect Auth Manager"""
         self._session = session
 
     def client_session(self) -> ClientSession:
