@@ -55,7 +55,18 @@ class AladdinConnectClient:
         3: STATUS_CONNECTED,
     }
 
-    CONTROLLER_STATUS = {0: "Offline", 1: STATUS_CONNECTED}
+    DEVICE_FAULT = {
+        0: "None",
+        1: "UL lockout",
+        2: "Interlock",
+        3: "Not safe",
+        4: "Will not move",
+    }
+
+    DEVICE_STATUS = {
+        0: "Offline",
+        1: STATUS_CONNECTED,
+    }
 
     def __init__(self, email: str, password: str, session, client_id: str):
         self._session_id = session

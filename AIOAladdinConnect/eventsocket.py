@@ -1,24 +1,12 @@
 """Aladdin Connect Eventsocket Handeler."""
 import asyncio
-import logging
 import socket
 from typing import Callable
 import aiohttp
-
+from .const import _LOGGER, WSURI, RECONNECT_COUNT, RECONNECT_LONG_DELAY
 # < WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4,"fault":0}', extra='')DEBUG:waiting for event message
 # WSMessage(type=<WSMsgType.TEXT: 1>, data='{"serial":"F0AD4E03A9FE","door":1,"door_status":4}', extra='')
 # DEBUG:waiting for event message
-
-_LOGGER = logging.getLogger(__name__)
-
-WSURI = "wss://event-caster.st1.gdocntl.net/updates"
-# WSURI_ACK = "wss://app.apps.st1.gdocntl.net/monitor"
-WS_STATUS_GOING_AWAY = 1001
-WS_STATUS_UNAUTHORIZED = 3000
-
-RECONNECT_COUNT = 3
-RECONNECT_LONG_DELAY = 60
-
 
 class EventSocket:
     """Aladdin Connect eventsocket class."""

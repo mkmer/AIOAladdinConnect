@@ -3,10 +3,7 @@ import base64
 import logging
 import socket
 import aiohttp
-
-
-_LOGGER = logging.getLogger(__name__)
-
+from .const import _LOGGER
 
 class SessionManager:
     """A session Manager for Aladdin Connect."""
