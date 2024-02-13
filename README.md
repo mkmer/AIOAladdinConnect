@@ -3,6 +3,10 @@ Python module that allows interacting with Genie Aladdin Connect devices via AIO
 
 Note that shared doors are not currently supported, only doors that are owned by your account can be controlled
 
+As of 1/24/2024 this libarary will be obsolete as Genie/Overhead door is moving to a new api.  While most of the interface will
+work with the new api, the websocket method will be changing to a new pre provided endpoint AND they will be moving to OAUTH 
+authentication.  Once things settle, we will attempt to address the changes.
+
 ## Usage
 ```
 from AIOAladdinConnect import AladdinConnectClient
