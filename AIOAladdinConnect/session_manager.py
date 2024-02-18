@@ -1,6 +1,7 @@
 """Aladdin Connect Session Manager."""
 import base64
 import logging
+import boto3
 import hmac
 import hashlib
 import uuid
@@ -11,7 +12,7 @@ from .const import _LOGGER, CLIENT_ID, CLIENT_SECRET
 class SessionManager:
     """A session Manager for Aladdin Connect."""
     HEADER_CONTENT_TYPE_URLENCODED = "application/x-www-form-urlencoded"
-    API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
+    API_BASE_URL = "https://api.smartgarage.systems"
     # API_BASE_URL = "https://16375mc41i.execute-api.us-east-1.amazonaws.com/IOS"
     RPC_URL = API_BASE_URL
 
@@ -59,48 +60,35 @@ class SessionManager:
             d2 = base64.b64encode(dig).decode()
             return d2
 
-        payload = {
-            "AuthFlow":"USER_PASSWORD_AUTH",
-            "AuthParameters":{
-                #"SECRET_HASH":"1lSy+LXf8zSVmq3GMU2ixqlLT/36rlD0eW4nQOWuctc=",
-                "SECRET_HASH":get_secret_hash(self._user_email),
-                "PASSWORD":self._password,
-                "USERNAME":self._user_email,
-                },
-            #"ClientMetadata":{},
-            "ClientId":CLIENT_ID,
-            }
-
-
-        url = self.LOGIN_ENDPOINT
-        _LOGGER.debug("Sending payload: %s", payload)
         headers = {
                     "Content-Type": "application/x-amz-json-1.1",
                     "Accept-Encoding": "identity",
-                    "aws-sdk-invocation-id": "c4e03fa8-a542-4079-b19b-28c3b6e9be63",
+                    #"aws-sdk-invocation-id": "c4e03fa8-a542-4079-b19b-28c3b6e9be63",
                     "Connection": "Keep-Alive",
                     "Host": "cognito-idp.us-east-2.amazonaws.com",
                     "User-Agent": "amplify-android/1.37.3 (Android 12; Google Pixel 3; en_US)",
                     "X-Amz-Target" : "AWSCognitoIdentityProviderService.InitiateAuth"
                 }
+
         try:
-            response = await self._session.post(
-                url, data=payload, headers=headers
+            cidp = boto3.client('cognito-idp',region_name="us-east-2")
+            response = cidp.initiate_auth(
+                AuthFlow='USER_PASSWORD_AUTH',
+                AuthParameters={
+                    "SECRET_HASH":get_secret_hash(self._user_email),
+                    "USERNAME":self._user_email,
+                    "PASSWORD":self._password,
+                },
+                ClientId=CLIENT_ID,
             )
+        
             _LOGGER.debug("Received Response: %s", response)
-            if response.status == 401:
-                raise InvalidPasswordError(f"Server reported bad login {response}")
-
-            if response.status != 200:
-                raise ConnectionError(f"Server reported Error {response}")
-            if response.content_type == "application/json":
-                response_json = await response.json()
-                _LOGGER.debug("JSON Response %s", response_json)
-
-            if response_json and "access_token" in response_json:
+            if response['AuthenticationResult']:
+                _LOGGER.debug("JSON Response %s", response['AuthenticationResult'])
                 self._logged_in = True
-                self._auth_token = response_json["access_token"]
-                self._expires_in = response_json["expires_in"]
+                self._auth_token = response['AuthenticationResult']['AccessToken']
+                self._expires_in = response['AuthenticationResult']['ExpiresIn']
+                self._IdToken = response['AuthenticationResult']['IdToken']
                 self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
                 return True
         except ValueError as ex:

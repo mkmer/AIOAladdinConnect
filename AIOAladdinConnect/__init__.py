@@ -8,7 +8,6 @@ from typing import Callable
 import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect import session_manager
-from AIOAladdinConnect.eventsocket import EventSocket
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,7 +70,6 @@ class AladdinConnectClient:
     def __init__(self, email: str, password: str, session, client_id: str):
         self._session_id = session
         self._session = SessionManager(email, password, session, client_id)
-        self._eventsocket = None
         self._doors = {"device_id": "0", "status": "closed", "serial": "0000000000"}, {}
         self._attr_changed: dict(str, Callable) = {}
         self._first_door = None
@@ -106,24 +104,24 @@ class AladdinConnectClient:
             await self.get_doors()
             _LOGGER.info("Got initial door status")
 
-            if not self._eventsocket:  # if first time login in....
-                self._eventsocket = EventSocket(
-                    self._session.auth_token(), self._call_back, self._session_id
-                )
-                await self._eventsocket.start()
-            else:
-                await self._eventsocket.set_auth_token(
-                    self._session.auth_token()
-                )  # set the new auth token
+            # if not self._eventsocket:  # if first time login in....
+            #     self._eventsocket = EventSocket(
+            #         self._session.auth_token(), self._call_back, self._session_id
+            #     )
+            #     await self._eventsocket.start()
+            # else:
+            #     await self._eventsocket.set_auth_token(
+            #         self._session.auth_token()
+            #     )  # set the new auth token
 
-            _LOGGER.info("Started Socket")
+            # _LOGGER.info("Started Socket")
 
         return status
 
     async def close(self):
         """Close the connection and stop the event socket."""
-        if self._eventsocket:
-            await self._eventsocket.stop()
+        # if self._eventsocket:
+        #     await self._eventsocket.stop()
         return True
 
     async def get_doors(self, serial: str = None):
@@ -139,13 +137,13 @@ class AladdinConnectClient:
             for device in devices:
                 doors += device["doors"]
 
-        if self._eventsocket and serial:
-            for door, orig_door in zip(doors, self._doors):
-                if door["status"] != orig_door["status"]:
-                    # The socket has failed to keep us up to date...
-                    await self._eventsocket.stop()
-                    await self._eventsocket.start()
-                    break
+        # if self._eventsocket and serial:
+        #     for door, orig_door in zip(doors, self._doors):
+        #         if door["status"] != orig_door["status"]:
+        #             # The socket has failed to keep us up to date...
+        #             await self._eventsocket.stop()
+        #             await self._eventsocket.start()
+        #             break
         self._doors = doors
 
         return self._doors
@@ -172,11 +170,7 @@ class AladdinConnectClient:
                                     door.get("link_status", 0)
                                 ],
                                 "battery_level": door.get("battery_level", 0),
-                                "rssi": device.get("rssi", 0),
-                                "serial": device["serial"][0:12],
-                                "vendor": device.get("vendor", ""),
-                                "model": device.get("model", ""),
-                                "ble_strength": door.get("ble_strength", 0),
+                                "serial": device["serial_number"][0:12],
                             }
                         )
                     devices.append({"device_id": device["id"], "doors": doors})
