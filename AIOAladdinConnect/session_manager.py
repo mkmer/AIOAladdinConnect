@@ -32,6 +32,7 @@ class SessionManager:
         self._auth = {}
         self._reauthtimer = None
         self._cidp = None
+        self._session = None
 
     def get_secret_hash(self, username):
         """Get the secret hash."""
@@ -59,8 +60,8 @@ class SessionManager:
         try:
             #May need to figure out different regions?
             session = aioboto3.Session()
+            self._session = session
             async with session.client('cognito-idp',region_name="us-east-2") as cidp:
-                self._cidp = cidp
                 response = await cidp.initiate_auth(
                     AuthFlow='USER_PASSWORD_AUTH',
                     AuthParameters={
@@ -176,18 +177,19 @@ class SessionManager:
 
     async def reauth(self) -> bool:
         """Reauthenticate client."""
-        try:
-            response = await self._cidp.initiate_auth(
-                    AuthFlow='REFRESH_TOKEN',
-                    AuthParameters={
-                        "SECRET_HASH":self.get_secret_hash(self._user_email),
-                        "REFRESH_TOKEN":self._refresh_token,
-                    },
-                    ClientId=CLIENT_ID,
-                )
-        except self._cidp.exceptions.NotAuthorizedException as ex:
-            _LOGGER.debug("can't refresh token: %s", ex)
-            return False
+        async with self._session.client('cognito-idp',region_name="us-east-2") as cidp:
+            try:
+                response = await cidp.initiate_auth(
+                        AuthFlow='REFRESH_TOKEN',
+                        AuthParameters={
+                            "SECRET_HASH":self.get_secret_hash(self._user_email),
+                            "REFRESH_TOKEN":self._refresh_token,
+                        },
+                        ClientId=CLIENT_ID,
+                    )
+            except self._cidp.exceptions.NotAuthorizedException as ex:
+                _LOGGER.debug("can't refresh token: %s", ex)
+                return False
 
         _LOGGER.debug("Received CIDP Response: %s", response)
         if response['AuthenticationResult']:
