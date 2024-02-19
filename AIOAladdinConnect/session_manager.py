@@ -16,7 +16,11 @@ class SessionManager:
     def __init__(self, email, password, session, client_id):
         self._timeout = aiohttp.ClientTimeout(total=30)
         self._session = session
-        self._headers = {}
+        self._headers = {
+            'app_version': '6.21',
+            'Host':API_BASE_URL[8:],
+            'User-Agent': 'okhttp/4.10.0',        
+        }
         self._auth_token = None
         self._user_email = email
         self._password = password
