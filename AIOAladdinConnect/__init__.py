@@ -8,7 +8,7 @@ from typing import Callable
 import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect import session_manager
-from AIOAladdinConnect.eventsocket import EventSocket
+from .const import DoorCommand, DoorStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,43 +16,31 @@ _LOGGER = logging.getLogger(__name__)
 class AladdinConnectClient:
     """Aladdin Connect Client Class"""
 
-    CONFIGURATION_ENDPOINT = "/configuration"
     DEVICE_ENDPOINT = "/devices"
-
-    DOOR_STATUS_OPEN = "open"
-    DOOR_STATUS_CLOSED = "closed"
-    DOOR_STATUS_OPENING = "opening"
-    DOOR_STATUS_CLOSING = "closing"
-    DOOR_STATUS_UNKNOWN = "unknown"
-    DOOR_STATUS_TIMEOUT_CLOSE = "open"  # If it timed out opening, it's still closed?
-    DOOR_STATUS_TIMEOUT_OPEN = "closed"  # If it timed out closing, it's still open?
-    DOOR_COMMAND_CLOSE = "CloseDoor"
-    DOOR_COMMAND_OPEN = "OpenDoor"
+    MQTT = "/mqtt/token"
+    SESSION_REGISTER = "/session/register"
 
     DOOR_STATUS = {
-        0: DOOR_STATUS_UNKNOWN,  # Unknown
-        1: DOOR_STATUS_OPEN,  # open
-        2: DOOR_STATUS_OPENING,  # opening
-        3: DOOR_STATUS_TIMEOUT_OPEN,  # Timeout Opening
-        4: DOOR_STATUS_CLOSED,  # closed
-        5: DOOR_STATUS_CLOSING,  # closing
-        6: DOOR_STATUS_TIMEOUT_CLOSE,  # Timeout Closing
-        7: DOOR_STATUS_UNKNOWN,  # Not Configured
+        0: DoorStatus.UNKNOWN,  # Unknown
+        1: DoorStatus.OPEN,  # open
+        2: DoorStatus.OPENING,  # opening
+        3: DoorStatus.TIMEOUT_OPEN,  # Timeout Opening
+        4: DoorStatus.CLOSED,  # closed
+        5: DoorStatus.CLOSING,  # closing
+        6: DoorStatus.TIMEOUT_CLOSE,  # Timeout Closing
+        7: DoorStatus.UNKNOWN,  # Not Configured
     }
 
     REQUEST_DOOR_STATUS_COMMAND = {
-        DOOR_STATUS_CLOSED: DOOR_COMMAND_CLOSE,
-        DOOR_STATUS_OPEN: DOOR_COMMAND_OPEN,
+        DoorStatus.CLOSED: DoorCommand.CLOSE,
+        DoorStatus.OPEN: DoorCommand.OPEN,
     }
-
-    STATUS_CONNECTED = "Connected"
-    STATUS_NOT_CONFIGURED = "NotConfigured"
 
     DOOR_LINK_STATUS = {
         0: "Unknown",
-        1: STATUS_NOT_CONFIGURED,
+        1: DoorStatus.NOT_CONFIGURED,
         2: "Paired",
-        3: STATUS_CONNECTED,
+        3: DoorStatus.CONNECTED,
     }
 
     DEVICE_FAULT = {
@@ -65,33 +53,17 @@ class AladdinConnectClient:
 
     DEVICE_STATUS = {
         0: "Offline",
-        1: STATUS_CONNECTED,
+        1: DoorStatus.CONNECTED,
     }
 
     def __init__(self, email: str, password: str, session, client_id: str):
         self._session_id = session
         self._session = SessionManager(email, password, session, client_id)
-        self._eventsocket = None
         self._doors = {"device_id": "0", "status": "closed", "serial": "0000000000"}, {}
         self._attr_changed: dict(str, Callable) = {}
         self._first_door = None
         self._reset_time = None
-
-    def register_callback(self, update_callback: Callable, serial: str, door: int):
-        """Register a callback function for events"""
-        key = f"{serial}-{door}"
-        self._attr_changed.update({key: update_callback})
-        _LOGGER.info("Registered callback %s", key)
-
-    def unregister_callback(self, serial: str, door: int):
-        """Remove a registered callback from events"""
-        key = f"{serial}-{door}"
-        if self._attr_changed:
-            try:
-                del self._attr_changed[key]
-                _LOGGER.info("Unregistered callback %s", key)
-            except KeyError:
-                _LOGGER.error("Unregistered callback %s Not found", key)
+        self._mqtt = None
 
     async def login(self):
         """Login to AladdinConnect Service and get initial door status"""
@@ -106,24 +78,16 @@ class AladdinConnectClient:
             await self.get_doors()
             _LOGGER.info("Got initial door status")
 
-            if not self._eventsocket:  # if first time login in....
-                self._eventsocket = EventSocket(
-                    self._session.auth_token(), self._call_back, self._session_id
-                )
-                await self._eventsocket.start()
-            else:
-                await self._eventsocket.set_auth_token(
-                    self._session.auth_token()
-                )  # set the new auth token
+            response = await self._session.get(self.MQTT)
 
-            _LOGGER.info("Started Socket")
-
+            if response:
+                self._mqtt = response
         return status
 
     async def close(self):
         """Close the connection and stop the event socket."""
-        if self._eventsocket:
-            await self._eventsocket.stop()
+        # if self._eventsocket:
+        #     await self._eventsocket.stop()
         return True
 
     async def get_doors(self, serial: str = None):
@@ -139,13 +103,6 @@ class AladdinConnectClient:
             for device in devices:
                 doors += device["doors"]
 
-        if self._eventsocket and serial:
-            for door, orig_door in zip(doors, self._doors):
-                if door["status"] != orig_door["status"]:
-                    # The socket has failed to keep us up to date...
-                    await self._eventsocket.stop()
-                    await self._eventsocket.start()
-                    break
         self._doors = doors
 
         return self._doors
@@ -172,8 +129,8 @@ class AladdinConnectClient:
                                     door.get("link_status", 0)
                                 ],
                                 "battery_level": door.get("battery_level", 0),
-                                "rssi": device.get("rssi", 0),
-                                "serial": device["serial"][0:12],
+                                "serial": device["serial_number"],
+                                "rssi": device.get("rssi",0),
                                 "vendor": device.get("vendor", ""),
                                 "model": device.get("model", ""),
                                 "ble_strength": door.get("ble_strength", 0),
@@ -187,7 +144,7 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientError, session_manager.ConnectionError) as ex:
+            except (aiohttp.ClientError, session_manager.AladdinConnectionError) as ex:
                 _LOGGER.info("Client connection: %s", ex)
                 await self.login()
                 attempts += 1
@@ -218,7 +175,7 @@ class AladdinConnectClient:
                             ],
                             "battery_level": door.get("battery_level", 0),
                             "rssi": response.get("rssi", 0),
-                            "serial": response["serial"][0:12],
+                            "serial": response["serial"],
                             "vendor": response.get("vendor", ""),
                             "model": response.get("model", ""),
                             "ble_strength": door.get("ble_strength", 0),
@@ -232,7 +189,7 @@ class AladdinConnectClient:
                 )
                 return None
 
-            except (aiohttp.ClientError, session_manager.ConnectionError) as ex:
+            except (aiohttp.ClientError, session_manager.AladdinConnectionError) as ex:
                 _LOGGER.error("%s", ex)
                 await self.login()
                 attempts += 1
@@ -246,13 +203,13 @@ class AladdinConnectClient:
     async def close_door(self, device_id: int, door_number: int):
         """Command to close the door."""
         return await self._set_door_status(
-            device_id, door_number, self.DOOR_STATUS_CLOSED
+            device_id, door_number, DoorStatus.CLOSED
         )
 
     async def open_door(self, device_id: int, door_number: int):
         """Command to open the door."""
         return await self._set_door_status(
-            device_id, door_number, self.DOOR_STATUS_OPEN
+            device_id, door_number, DoorStatus.OPEN
         )
 
     async def _set_door_status(
@@ -260,12 +217,12 @@ class AladdinConnectClient:
     ):
         """Set door state."""
         payload = {
-            "command_key": self.REQUEST_DOOR_STATUS_COMMAND[requested_door_status]
+            "command": self.REQUEST_DOOR_STATUS_COMMAND[requested_door_status].value
         }
 
         try:
             await self._session.call_rpc(
-                f"/devices/{device_id}/door/{door_number}/command", payload
+                f"/command/devices/{device_id}/doors/{door_number}", payload
             )
         except ValueError as ex:
             # Ignore "Door is already open/closed" errors to maintain backwards compatibility
@@ -408,12 +365,12 @@ class AladdinConnectClient:
     async def set_auth_token(self, auth_token):
         """Set new auth token."""
         self._session.set_auth_token(auth_token)
-        if self._eventsocket is None:
-            self._eventsocket = EventSocket(
-                self._session.auth_token(), self._call_back, self._session_id
-            )
-        if self._eventsocket:
-            await self._eventsocket.set_auth_token(auth_token)
+        # if self._eventsocket is None:
+        #     self._eventsocket = EventSocket(
+        #         self._session.auth_token(), self._call_back, self._session_id
+        #     )
+        # if self._eventsocket:
+        #     await self._eventsocket.set_auth_token(auth_token)
 
 
 # Web server errors seen:

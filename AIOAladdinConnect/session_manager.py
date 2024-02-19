@@ -1,35 +1,48 @@
 """Aladdin Connect Session Manager."""
 import base64
-import logging
+import hmac
+import hashlib
 import socket
+import asyncio
 import aiohttp
-from .const import _LOGGER
+import aioboto3
+from .const import _LOGGER, CLIENT_ID, CLIENT_SECRET, API_BASE_URL
+
+TIME_BUFFER = 120
 
 class SessionManager:
     """A session Manager for Aladdin Connect."""
-    HEADER_CONTENT_TYPE_URLENCODED = "application/x-www-form-urlencoded"
-    API_BASE_URL = "https://pxdqkls7aj.execute-api.us-east-1.amazonaws.com/Android"
-    # API_BASE_URL = "https://16375mc41i.execute-api.us-east-1.amazonaws.com/IOS"
-    RPC_URL = API_BASE_URL
-
-    LOGIN_ENDPOINT = "/oauth/token"
-    LOGOUT_ENDPOINT = "/session/logout"
-    X_API_KEY = "fkowarQ0dX9Gj1cbB9Xkx1yXZkd6bzVn5x24sECW"  # Android
-    # X_API_KEY = "2BcHhgzjAa58BXkpbYM977jFvr3pJUhH52nflMuS" # IOS
 
     def __init__(self, email, password, session, client_id):
         self._timeout = aiohttp.ClientTimeout(total=30)
         self._session = session
         self._headers = {
-            "Content-Type": self.HEADER_CONTENT_TYPE_URLENCODED,
-            "X-Api-Key": self.X_API_KEY,
+            'app_version': '6.21',
+            'Host':API_BASE_URL[8:],
+            'User-Agent': 'okhttp/4.10.0',        
         }
         self._auth_token = None
         self._user_email = email
         self._password = password
         self._logged_in = False
-        self._client_id = client_id
+        self._client_id = client_id if client_id else CLIENT_ID
         self._expires_in = None
+        self._id_token = ""
+        self._refresh_token = ""
+        self._auth = {}
+        self._reauthtimer = None
+        self._cidp = None
+        self._cidpsession = None
+
+    def get_secret_hash(self, username):
+        """Get the secret hash."""
+        msg = username + self._client_id
+        dig = hmac.new(
+            str(CLIENT_SECRET).encode('utf-8'),
+            msg = str(msg).encode('utf-8'),
+            digestmod=hashlib.sha256).digest()
+        d2 = base64.b64encode(dig).decode()
+        return d2
 
     def auth_token(self):
         """Retrieve current auth token."""
@@ -44,67 +57,52 @@ class SessionManager:
         """Login to Aladdin Connect service."""
         self._auth_token = None
         self._logged_in = False
-        password_base64 = base64.b64encode(self._password.encode("utf-8")).decode(
-            "utf-8"
-        )
-        payload = {
-            "grant_type": "password",
-            "client_id": self._client_id,
-            "brand": "ALADDIN",
-            "username": self._user_email,
-            "password": password_base64,
-            "app_version": "5.30",
-            # "platform": "platform",
-            # "model": "Google Pixel 6",
-            # "build_number": "2042",
-            # "os_version": "12.0.0"
-        }
-
-        url = self.API_BASE_URL + self.LOGIN_ENDPOINT
-        _LOGGER.debug("Sending payload: %s", payload)
         try:
-            response = await self._session.post(
-                url, data=payload, headers=self._headers
-            )
-            _LOGGER.debug("Received Response: %s", response)
-            if response.status == 401:
-                raise InvalidPasswordError(f"Server reported bad login {response}")
+            #May need to figure out different regions?
+            cidpsession = aioboto3.Session()
+            self._cidpsession = cidpsession
+            async with cidpsession.client('cognito-idp',region_name="us-east-2") as cidp:
+                response = await cidp.initiate_auth(
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
+                        "SECRET_HASH":self.get_secret_hash(self._user_email),
+                        "USERNAME":self._user_email,
+                        "PASSWORD":self._password,
+                    },
+                    ClientId=CLIENT_ID,
+                )
 
-            if response.status != 200:
-                raise ConnectionError(f"Server reported Error {response}")
-            if response.content_type == "application/json":
-                response_json = await response.json()
-                _LOGGER.debug("JSON Response %s", response_json)
-
-            if response_json and "access_token" in response_json:
-                self._logged_in = True
-                self._auth_token = response_json["access_token"]
-                self._expires_in = response_json["expires_in"]
-                self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
-                return True
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
+            raise ex
         # aiohttp.client_exceptions.ClientConnectorError - do we need to catch this?
         except InvalidPasswordError as ex:
             _LOGGER.error("Aladdin Connect - Unable to connect for login %s", ex)
             raise ex
+
+        _LOGGER.debug("Received CIDP Response: %s", response)
+        if response and response.get('AuthenticationResult'):
+            _LOGGER.debug("JSON Response %s", response['AuthenticationResult'])
+            self._auth = response['AuthenticationResult']
+            self._logged_in = True
+            self._auth_token = response['AuthenticationResult']['AccessToken']
+            self._expires_in = response['AuthenticationResult']['ExpiresIn']
+            self._id_token = response['AuthenticationResult']['IdToken']
+            self._refresh_token = response['AuthenticationResult']['RefreshToken']
+            self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
+            self._reauthtimer = ReauthTimer((self._expires_in - TIME_BUFFER), self.reauth)
+            return True
 
         return False
 
     async def close(self):
         """Close socket."""
         _LOGGER.debug("Logging out & closing socket")
-        if self._session:
-            self._headers.update({"Content-Type": "application/json"})
-            url = self.API_BASE_URL + self.LOGOUT_ENDPOINT
-            response = await self._session.post(url, headers=self._headers)
-            if response.status != 200:
-                raise ConnectionError(f"Server reported Error {response}")
-            await self._session.close()
+        #Do nothing for now. Need to find logout endpoint.
 
     async def get(self, endpoint: str):
         """Get door status."""
-        url = self.API_BASE_URL + endpoint
+        url = API_BASE_URL + endpoint
         self._headers.update({"Content-Type": "application/x-www-form-urlencoded"})
 
         try:
@@ -117,19 +115,19 @@ class SessionManager:
                 return await response.json()
 
         except ValueError as ex:
-            _LOGGER.error("Aladdin Connect - Unable to get doors %s : %s", ex, response)
+            _LOGGER.error("Aladdin Connect - Unable to get doors %s", ex)
 
         except socket.gaierror as ex:
             _LOGGER.error("Socket Connection error %s", ex)
 
-        if response.status != 200:
+        if response and response.status != 200:
             raise ConnectionError("Key has expired or not valid")
         return None
 
     async def call_rpc(self, api, payload=None):
         """Send and RPC message."""
         self._headers.update({"Content-Type": "application/json"})
-        url = self.API_BASE_URL + api
+        url = API_BASE_URL + api
         try:
             _LOGGER.info("Sending message: %s", payload)
             response = await self._session.post(
@@ -151,7 +149,7 @@ class SessionManager:
     async def call_status(self, api):
         """Update the door status."""
         self._headers.update({"Content-Type": "application/json"})
-        url = self.API_BASE_URL + api
+        url = API_BASE_URL + api
         try:
             response = await self._session.get(url, headers=self._headers)
 
@@ -177,10 +175,51 @@ class SessionManager:
         )
         raise ValueError(msg)
 
+    async def reauth(self) -> bool:
+        """Reauthenticate client."""
+        async with self._cidpsession.client('cognito-idp',region_name="us-east-2") as cidp:
+            try:
+                response = await cidp.initiate_auth(
+                        AuthFlow='REFRESH_TOKEN',
+                        AuthParameters={
+                            "SECRET_HASH":self.get_secret_hash(self._user_email),
+                            "REFRESH_TOKEN":self._refresh_token,
+                        },
+                        ClientId=CLIENT_ID,
+                    )
+            except self._cidp.exceptions.NotAuthorizedException as ex:
+                _LOGGER.debug("can't refresh token: %s", ex)
+                return False
+
+        _LOGGER.debug("Received CIDP Response: %s", response)
+        if response['AuthenticationResult']:
+            _LOGGER.debug("JSON Response %s", response['AuthenticationResult'])
+            self._logged_in = True
+            self._auth_token = response['AuthenticationResult']['AccessToken']
+            self._expires_in = response['AuthenticationResult']['ExpiresIn']
+            self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
+
+        self._reauthtimer = ReauthTimer((self._expires_in - TIME_BUFFER), self.reauth)
+        return True
+
+class ReauthTimer:
+    """Reauth timer."""
+    def __init__(self, timeout, callback):
+        self._timeout = timeout
+        self._callback = callback
+        self._task = asyncio.ensure_future(self._job())
+
+    async def _job(self):
+        await asyncio.sleep(self._timeout)
+        await self._callback()
+
+    def cancel(self):
+        """Cancel the timer."""
+        self._task.cancel()
 
 class InvalidPasswordError(Exception):
     """Aladdin Password Error."""
 
 
-class ConnectionError(Exception):
+class AladdinConnectionError(Exception):
     """Aladdin Connection error."""
