@@ -32,7 +32,7 @@ class SessionManager:
         self._auth = {}
         self._reauthtimer = None
         self._cidp = None
-        self._session = None
+        self._cidpsession = None
 
     def get_secret_hash(self, username):
         """Get the secret hash."""
@@ -59,9 +59,9 @@ class SessionManager:
         self._logged_in = False
         try:
             #May need to figure out different regions?
-            session = aioboto3.Session()
-            self._session = session
-            async with session.client('cognito-idp',region_name="us-east-2") as cidp:
+            cidpsession = aioboto3.Session()
+            self._cidpsession = cidpsession
+            async with cidpsession.client('cognito-idp',region_name="us-east-2") as cidp:
                 response = await cidp.initiate_auth(
                     AuthFlow='USER_PASSWORD_AUTH',
                     AuthParameters={
@@ -177,7 +177,7 @@ class SessionManager:
 
     async def reauth(self) -> bool:
         """Reauthenticate client."""
-        async with self._session.client('cognito-idp',region_name="us-east-2") as cidp:
+        async with self._cidpsession.client('cognito-idp',region_name="us-east-2") as cidp:
             try:
                 response = await cidp.initiate_auth(
                         AuthFlow='REFRESH_TOKEN',
