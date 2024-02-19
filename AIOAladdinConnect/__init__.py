@@ -222,7 +222,7 @@ class AladdinConnectClient:
 
         try:
             await self._session.call_rpc(
-                f"/command/devices/{device_id}/door/{door_number}", payload
+                f"/command/devices/{device_id}/doors/{door_number}", payload
             )
         except ValueError as ex:
             # Ignore "Door is already open/closed" errors to maintain backwards compatibility
