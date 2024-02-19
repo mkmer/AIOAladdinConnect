@@ -5,7 +5,7 @@ import hashlib
 import socket
 import asyncio
 import aiohttp
-import boto3
+import aioboto3
 from .const import _LOGGER, CLIENT_ID, CLIENT_SECRET, API_BASE_URL
 
 TIME_BUFFER = 120
@@ -52,19 +52,20 @@ class SessionManager:
         """Login to Aladdin Connect service."""
         self._auth_token = None
         self._logged_in = False
-
         try:
             #May need to figure out different regions?
-            cidp = boto3.client('cognito-idp',region_name="us-east-2")
-            response = cidp.initiate_auth(
-                AuthFlow='USER_PASSWORD_AUTH',
-                AuthParameters={
-                    "SECRET_HASH":self.get_secret_hash(self._user_email),
-                    "USERNAME":self._user_email,
-                    "PASSWORD":self._password,
-                },
-                ClientId=CLIENT_ID,
-            )
+            session = aioboto3.Session()
+            async with session.client('cognito-idp',region_name="us-east-2") as cidp:
+                self._cidp = cidp
+                response = await cidp.initiate_auth(
+                    AuthFlow='USER_PASSWORD_AUTH',
+                    AuthParameters={
+                        "SECRET_HASH":self.get_secret_hash(self._user_email),
+                        "USERNAME":self._user_email,
+                        "PASSWORD":self._password,
+                    },
+                    ClientId=CLIENT_ID,
+                )
 
         except ValueError as ex:
             _LOGGER.error("Aladdin Connect - Unable to login %s", ex)
@@ -85,15 +86,15 @@ class SessionManager:
             self._refresh_token = response['AuthenticationResult']['RefreshToken']
             self._headers.update({"Authorization": f"Bearer {self._auth_token}"})
             self._reauthtimer = ReauthTimer((self._expires_in - TIME_BUFFER), self.reauth)
-            self._cidp = cidp
             return True
+
         return False
 
     async def close(self):
         """Close socket."""
         _LOGGER.debug("Logging out & closing socket")
         #Do nothing for now. Need to find logout endpoint.
-     
+  
     async def get(self, endpoint: str):
         """Get door status."""
         url = API_BASE_URL + endpoint
@@ -172,7 +173,7 @@ class SessionManager:
     async def reauth(self) -> bool:
         """Reauthenticate client."""
         try:
-            response = self._cidp.initiate_auth(
+            response = await self._cidp.initiate_auth(
                     AuthFlow='REFRESH_TOKEN',
                     AuthParameters={
                         "SECRET_HASH":self.get_secret_hash(self._user_email),

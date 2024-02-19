@@ -23,6 +23,6 @@ setup(
         "Operating System :: OS Independent",
         "Programming Language :: Python",
     ],
-    install_requires=["aiohttp","boto3"],
+    install_requires=["aiohttp","aioboto3"],
     include_package_data=True,
 )
