@@ -99,7 +99,7 @@ class SessionManager:
         """Close socket."""
         _LOGGER.debug("Logging out & closing socket")
         #Do nothing for now. Need to find logout endpoint.
-  
+
     async def get(self, endpoint: str):
         """Get door status."""
         url = API_BASE_URL + endpoint
