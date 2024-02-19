@@ -133,6 +133,7 @@ class AladdinConnectClient:
                                 "rssi": device.get("rssi",0),
                                 "vendor": device.get("vendor", ""),
                                 "model": device.get("model", ""),
+                                "ble_strength": door.get("ble_strength", 0),
                             }
                         )
                     devices.append({"device_id": device["id"], "doors": doors})
