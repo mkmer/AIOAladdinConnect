@@ -34,5 +34,5 @@ class DoorStatus(StrEnum):
 class DoorCommand(StrEnum):
     """Aladdin Connect Door commands."""
 
-    CLOSE = "CloseDoor"
-    OPEN = "OpenDoor"
+    CLOSE = "CLOSE_DOOR"
+    OPEN = "OPEN_DOOR"

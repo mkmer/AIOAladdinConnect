@@ -8,7 +8,7 @@ from typing import Callable
 import aiohttp
 from AIOAladdinConnect.session_manager import SessionManager
 from AIOAladdinConnect import session_manager
-from .const import DoorCommand, DoorStatus, API_BASE_URL
+from .const import DoorCommand, DoorStatus
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -65,22 +65,6 @@ class AladdinConnectClient:
         self._reset_time = None
         self._mqtt = None
 
-    def register_callback(self, update_callback: Callable, serial: str, door: int):
-        """Register a callback function for events"""
-        key = f"{serial}-{door}"
-        self._attr_changed.update({key: update_callback})
-        _LOGGER.info("Registered callback %s", key)
-
-    def unregister_callback(self, serial: str, door: int):
-        """Remove a registered callback from events"""
-        key = f"{serial}-{door}"
-        if self._attr_changed:
-            try:
-                del self._attr_changed[key]
-                _LOGGER.info("Unregistered callback %s", key)
-            except KeyError:
-                _LOGGER.error("Unregistered callback %s Not found", key)
-
     async def login(self):
         """Login to AladdinConnect Service and get initial door status"""
         _LOGGER.info("Logging in")
@@ -98,18 +82,6 @@ class AladdinConnectClient:
 
             if response:
                 self._mqtt = response
-            # if not self._eventsocket:  # if first time login in....
-            #     self._eventsocket = EventSocket(
-            #         self._session.auth_token(), self._call_back, self._session_id
-            #     )
-            #     await self._eventsocket.start()
-            # else:
-            #     await self._eventsocket.set_auth_token(
-            #         self._session.auth_token()
-            #     )  # set the new auth token
-
-            # _LOGGER.info("Started Socket")
-
         return status
 
     async def close(self):
@@ -131,13 +103,6 @@ class AladdinConnectClient:
             for device in devices:
                 doors += device["doors"]
 
-        # if self._eventsocket and serial:
-        #     for door, orig_door in zip(doors, self._doors):
-        #         if door["status"] != orig_door["status"]:
-        #             # The socket has failed to keep us up to date...
-        #             await self._eventsocket.stop()
-        #             await self._eventsocket.start()
-        #             break
         self._doors = doors
 
         return self._doors
