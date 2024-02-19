@@ -131,6 +131,8 @@ class AladdinConnectClient:
                                 "battery_level": door.get("battery_level", 0),
                                 "serial": device["serial_number"],
                                 "rssi": device.get("rssi",0),
+                                "vendor": device.get("vendor", ""),
+                                "model": device.get("model", ""),
                             }
                         )
                     devices.append({"device_id": device["id"], "doors": doors})
